@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "allowJs": true,
+    //"checkJs": true,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vue-cesium/global", "vue-cesium/Cesium"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.js",
+    "node_modules/vue-cesium/Cesium.d.ts",
+    "node_modules/vue-cesium/global.d.ts"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

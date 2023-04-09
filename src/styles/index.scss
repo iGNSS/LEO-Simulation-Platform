@@ -1,0 +1,70 @@
+// :root {
+//   --el-color-primary: red;
+// }
+
+body {
+  font-family:
+    /*"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",*/ "Microsoft YaHei",
+    "微软雅黑", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  //background: #1e1e1e;
+}
+
+a, address, b, big, blockquote, body, center, cite, code, dd, del, div, dl, dt, em, fieldset, font, form, h1, h2, h3, h4, h5, h6, html, i, iframe, img, ins, label, legend, li, ol, p, pre, small, span, strong, u, ul, var {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+  color: var(--el-color-primary);
+}
+
+body, ul, li, ol, p, dl, dd, h1, h2, h3, h4, h5, h6, img, iframe, form {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  border: 0;
+}
+
+code {
+  border-radius: 2px;
+  padding: 2px 4px;
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.center-form-wrapper {
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+
+  .title {
+    margin: 0 auto 30px auto;
+    text-align: center;
+    color: #707070;
+  }
+
+  .center-form {
+    margin: 2em;
+    // border-radius: 6px;
+    width: 400px;
+    // background: #ffffff;
+
+    padding: 25px 25px 5px 25px;
+    /* .el-input {
+      height: 38px;
+      input {
+        height: 38px;
+      }
+    } */
+    /* .input-icon {
+      height: 39px;
+      width: 14px;
+      margin-left: 2px;
+    } */
+  }
+}
