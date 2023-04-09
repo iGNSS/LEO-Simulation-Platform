@@ -7,7 +7,7 @@
       :home-button="false"
       :scene-mode-picker="false"
       :animation="false"
-      :timeline="false"
+      :timeline="true"
       :fullscreen-button="false"
       :scene3-d-only="false"
       :should-animate="true"
@@ -69,8 +69,9 @@ const onCesiumReady = e => {
 
 <style scoped>
 #cesiumContainer {
-  height: 100vh;
+  /* height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow: hidden; */
+  z-index: -5;
 }
 </style>

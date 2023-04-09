@@ -1,19 +1,26 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-// import router from "./router";
-// import store from "./store";
+import { Quasar, Notify } from "quasar";
 
-// import ElementPlus from "element-plus";
-// import "element-plus/theme-chalk/src/message.scss";
-// import VueCesium from "vue-cesium";
+// Import icon libraries
+import "@quasar/extras/material-icons/material-icons.css";
+
+// Import Quasar css
+import "quasar/src/css/index.sass";
 
 import "./styles/index.scss";
 
 // import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 
 const app = createApp(App);
-// app.use(router).use(ElementPlus).use(store);
-// app.use(VueCesium);
+app.use(Quasar, {
+  plugins: { Notify },
+  config: {
+    notify: {
+      /* look at QuasarConfOptions from the API card */
+    },
+  },
+});
 
 // for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 //   app.component(key, component);
