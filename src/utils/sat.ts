@@ -262,7 +262,8 @@ function addUser(userN) {
   }
 }
 
-function CZML2Sat(text) {
+//直接操作viewer | 
+export function CZML2Sat(text) {
   let czml = JSON.parse(text);
   let timeInfo = czml[0].clock;
   let currentTime = timeInfo.currentTime;

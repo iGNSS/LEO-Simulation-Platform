@@ -33,6 +33,8 @@
 import { useVueCesium, VcConfigProvider, VcViewer } from "vue-cesium";
 import MapControl from "./MapControl.vue";
 import { VcLayerImagery, VcImageryProviderArcgis } from "vue-cesium";
+import data1 from "@/assets/czml/Data1.czml?raw"
+import {CZML2Sat} from "@/utils/sat.js"
 
 const vcConfig = reactive({
   cesiumPath: "https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js",
@@ -49,6 +51,10 @@ const onViewerReady = ({ Cesium, viewer }) => {
     if (scene.mode !== Cesium.SceneMode.SCENE3D) {
       return;
     }
+
+    CZML2Sat(data1);
+    SatInit(6, 11, 10, 48);
+    addUser(userNum);
 
     const icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
     if (Cesium.defined(icrfToFixed)) {
