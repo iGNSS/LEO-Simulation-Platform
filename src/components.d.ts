@@ -9,5 +9,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     CesiumMap: typeof import('./components/CesiumMap.vue')['default']
     MapControl: typeof import('./components/MapControl.vue')['default']
+    RouterLink: typeof import('vue-router')['RouterLink']
+    RouterView: typeof import('vue-router')['RouterView']
   }
 }
