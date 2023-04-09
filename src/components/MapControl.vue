@@ -7,10 +7,10 @@
 <script setup lang="ts">
 import dat from "dat.gui";
 import { useVueCesium } from 'vue-cesium'
-import type { VcViewerProvider } from 'vue-cesium/es/utils/types'
 
 const $vc = useVueCesium();
-console.log($vc);
+const viewer = $vc.viewer; // It may be undefined before mounted
+console.log($vc, viewer);
 
 const gui = new dat.GUI();
 
@@ -23,7 +23,12 @@ const controls2 = {
 };
 
 gui.add(controls2, "visibleSpread2").name("显示波束");
-    //gui.add(controls, "visibleSpread").name("显示全部波束");
+//gui.add(controls, "visibleSpread").name("显示全部波束");
+
+onMounted(() => {
+  console.log($vc)
+});
+
 </script>
 
 <style lang="scss"></style>
