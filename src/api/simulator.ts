@@ -33,7 +33,7 @@ const R_e = 6371000;
 
 const isShowLabel = false; //是否显示标签
 
-enum SatelliteStatus {
+enum BeamStatus {
   Standby,
   Open,
   Closed,
@@ -51,7 +51,7 @@ export class Simulator {
   public readonly userPosition: Cesium.Cartesian3[];
   public readonly satellitePosition: Cesium.PositionProperty[];
   public readonly state: boolean[][];
-  public readonly status: SatelliteStatus[];
+  public readonly status: BeamStatus[];
   public readonly near: boolean[][];
   public readonly angle: number[][];
 
@@ -68,7 +68,7 @@ export class Simulator {
     this.beamShow = createArray2DEmpty(laneNum * satelliteNum);
 
     this.state = createArray2DFilled(laneNum * satelliteNum * beamNum, userNum, false);
-    this.status = Array(laneNum * satelliteNum * beamNum).fill(SatelliteStatus.Open);
+    this.status = Array(laneNum * satelliteNum * beamNum).fill(BeamStatus.Open);
 
     this.near = createArray2DFilled(laneNum * satelliteNum, userNum, false);
     this.angle = createArray2DEmpty(laneNum * satelliteNum * beamNum);
@@ -125,7 +125,7 @@ export class Simulator {
       }
     }
 
-    return D == 0 ? Number.NaN : N / D;
+    return N / D;
   }
 
   //找出所有需要覆盖用户的下标集合
@@ -135,6 +135,7 @@ export class Simulator {
       for (let m = 0; m < this.laneSatelliteBeamNum; m++) {
         if (this.state[m][k]) {
           coveredUsers.push(k);
+          break;
         }
       }
     }
@@ -148,7 +149,7 @@ export class Simulator {
     for (const idx of covereduserindex) {
       let b = false;
       for (let m = 0; m < this.laneNum * this.satelliteNum * this.beamNum; m++) {
-        if (this.state[m][idx] && this.status[m] == SatelliteStatus.Open) {
+        if (this.state[m][idx] && this.status[m] === BeamStatus.Open) {
           // TODO state2
           b = true;
           break;
@@ -166,11 +167,11 @@ export class Simulator {
     //找出所有待命波束下标
     const standbyBeams = [];
     for (let i = 0; i < this.laneNum * this.satelliteNum * this.beamNum; i++) {
-      if (this.count(i) != Number.NaN) {
+      if (Number.isFinite(this.count(i))) {
         standbyBeams.push(i);
-        this.status[i] = SatelliteStatus.Open;
+        this.status[i] = BeamStatus.Open;
       } else {
-        this.status[i] = SatelliteStatus.Closed;
+        this.status[i] = BeamStatus.Closed;
       }
     }
 
@@ -180,9 +181,9 @@ export class Simulator {
       const t = Math.max(...v);
       const index = v.indexOf(t);
       const beamindex = standbyBeams[index];
-      this.status[beamindex] = SatelliteStatus.Standby;
+      this.status[beamindex] = BeamStatus.Standby;
       if (!this.isWorking()) {
-        this.status[beamindex] = SatelliteStatus.Open;
+        this.status[beamindex] = BeamStatus.Open;
       }
       v.splice(index, 1);
       standbyBeams.splice(index, 1);
@@ -193,7 +194,12 @@ export class Simulator {
 
 export interface DisplayConfig {
   circleColor: Cesium.Color;
-  visibleSpread: boolean;
+}
+
+export enum BeamDisplayLevel {
+  None,
+  Some,
+  All,
 }
 
 export class SimulatorControl {
@@ -300,7 +306,7 @@ export class SimulatorControl {
         outlineWidth: 100,
       },
     });
-    circleEntity.show = this.config.visibleSpread;
+    circleEntity.show = false;
     circleEntity.position = property;
     this.waveEntities.push(circleEntity);
   }
@@ -422,34 +428,34 @@ export class SimulatorControl {
   }
 
   //显示波束
-  showBeam(): void {
+  showBeam(level: BeamDisplayLevel): void {
+    console.log("show", level);
     this.beamEntities.forEach(item => (item.show = true)); //控制显隐藏
     for (let i = 0; i < this.sim.laneSatelliteNum; i++) {
-      let showallbeam = false;
+      let covered = level === BeamDisplayLevel.All;
       for (let j = 0; j < this.sim.beamNum; j++) {
         const ellipse = this.sim.beamShow[i][j];
-        ellipse.show = this.config.visibleSpread;
-        if (this.sim.status[i * this.sim.beamNum + j] === SatelliteStatus.Open) {
-          ellipse.material = Cesium.Color.RED.withAlpha(1.5);
-          showallbeam = true;
-        } else if (this.sim.status[i * this.sim.beamNum + j] === SatelliteStatus.Standby) {
-          ellipse.material = Cesium.Color.GREEN.withAlpha(1.5);
-          showallbeam = true;
-        } else {
-          ellipse.material = Cesium.Color.WHITE.withAlpha(1.5);
+        switch (this.sim.status[i * this.sim.beamNum + j]) {
+          case BeamStatus.Open:
+            ellipse.material = Cesium.Color.RED.withAlpha(0.3);
+            covered = true;
+            break;
+          case BeamStatus.Standby:
+            ellipse.material = Cesium.Color.GREEN.withAlpha(0.3);
+            covered = true;
+            break;
+          case BeamStatus.Closed:
+            ellipse.material = Cesium.Color.WHITE.withAlpha(0.3);
+            break;
         }
       }
-
-      if (showallbeam) {
-        for (let j = 0; j < this.sim.beamNum; j++) {
-          this.sim.beamShow[i][j].show = true;
-        }
-      }
+      this.sim.beamShow[i].forEach(b => (b.show = covered));
     }
   }
 
   hideBeam() {
     this.beamEntities.forEach(item => (item.show = false));
+    this.sim.beamShow.forEach(t => t.forEach(t => (t.show = false)));
   }
 
   //更新相邻信息
@@ -480,7 +486,7 @@ export class SimulatorControl {
     const content = [];
     for (let i = 0; i < this.sim.laneNum * this.sim.satelliteNum * this.sim.beamNum; i++) {
       //显示卫星id
-      if ((i / this.sim.beamNum) % 1 == 0) {
+      if ((i / this.sim.beamNum) % 1 === 0) {
         content.push(`${this.viewer.entities.values[i / this.sim.beamNum].id}`);
       }
       content.push(this.sim.state[i].toString());
@@ -492,7 +498,7 @@ export class SimulatorControl {
     let openNum = 0;
     //var satelliteNum = 11;
     for (let i = 0; i < this.sim.laneSatelliteBeamNum; i++) {
-      if (this.sim.status[i] === SatelliteStatus.Open) {
+      if (this.sim.status[i] === BeamStatus.Open) {
         openNum++;
       }
     }

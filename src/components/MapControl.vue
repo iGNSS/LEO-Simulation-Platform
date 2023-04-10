@@ -2,7 +2,7 @@
   <div class="overlay" v-if="initialized">
     <div class="left">
       <q-card dark>
-        <q-card-section class="bg-grey-8">
+        <q-card-section class="bg-grey-9">
           <div class="text-h6">视角调整</div>
         </q-card-section>
         <q-card-section>
@@ -13,7 +13,9 @@
             style="max-width: 10em"
             label="视角高度"
             suffix="km"
-            @changed="onCameraPositionChanged"
+            @focus="controls.heightFocused = true"
+            @blur="controls.heightFocused = false"
+            @update:model-value="onCameraPositionChanged"
           />
           <q-input
             v-model.number="controls.longitude"
@@ -22,7 +24,9 @@
             style="max-width: 10em"
             label="视角经度"
             suffix="°"
-            @changed="onCameraPositionChanged"
+            @focus="controls.longitudeFocused = true"
+            @blur="controls.longitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
           />
           <q-input
             v-model.number="controls.latitude"
@@ -31,12 +35,14 @@
             style="max-width: 10em"
             label="视角纬度"
             suffix="°"
-            @changed="onCameraPositionChanged"
+            @focus="controls.latitudeFocused = true"
+            @blur="controls.latitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
           />
         </q-card-section>
       </q-card>
       <q-card dark class="info-card">
-        <q-card-section class="bg-grey-8">
+        <q-card-section class="bg-grey-9">
           <div class="text-h6">低轨卫星星座参数</div>
         </q-card-section>
         <q-card-section>
@@ -49,22 +55,30 @@
           <p>被覆盖用户个数：{{ curInfo.coveredNum }}</p>
         </q-card-section>
       </q-card>
+      <q-card dark>
+        <q-card-section class="bg-grey-9">
+          <div class="text-h6">波束显示</div>
+        </q-card-section>
+        <q-card-section>
+          <q-slider
+            dark
+            v-model="controls.beamDisplay"
+            color="deep-orange"
+            markers
+            :marker-labels="v => BeamDisplayLevel[v].toString()"
+            :min="0"
+            :max="2"
+            @change="onBeamDisplayChanged"
+          />
+        </q-card-section>
+      </q-card>
     </div>
-    <div class="right">
-      <div style="background-color: rgba(100, 100, 100, 50); width: max-content">
-        <q-checkbox
-          v-model="controls.visibleSpread2"
-          label="显示波束"
-          @changed="onVisibleSpread2Changed"
-        />
-        <q-checkbox v-model="controls.visibleSpread" label="显示全部波束" />
-      </div>
-    </div>
+    <div class="right"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { SimulatorControl } from "@/api/simulator";
+import { SimulatorControl, BeamDisplayLevel } from "@/api/simulator";
 import data1 from "@/assets/czml/dataAll.czml?raw";
 import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
@@ -80,6 +94,10 @@ const controls = reactive({
   height: 10000,
   longitude: 120,
   latitude: 32,
+  heightFocused: false,
+  longitudeFocused: false,
+  latitudeFocused: false,
+  beamDisplay: BeamDisplayLevel.None,
   visibleSpread: false, // 显示全部波束
   visibleSpread2: false, // 显示波束
 });
@@ -97,7 +115,6 @@ const curInfo = reactive({
 
 const ctrl = new SimulatorControl(viewer, {
   circleColor: Cesium.Color.WHITE,
-  visibleSpread: false,
 });
 
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
@@ -116,9 +133,9 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     Object.assign(curInfo, ctrl.showData());
 
     const position = viewer.camera.positionCartographic;
-    controls.longitude = Cesium.Math.toDegrees(position.longitude);
-    controls.latitude = Cesium.Math.toDegrees(position.latitude);
-    controls.height = position.height / 1000;
+    if (!controls.longitudeFocused) controls.longitude = Cesium.Math.toDegrees(position.longitude);
+    if (!controls.latitudeFocused) controls.latitude = Cesium.Math.toDegrees(position.latitude);
+    if (!controls.heightFocused) controls.height = position.height / 1000;
   });
   initialized.value = true;
 });
@@ -133,8 +150,8 @@ const onCameraPositionChanged = () => {
   });
 };
 
-const onVisibleSpread2Changed = (val: boolean) => {
-  val ? ctrl.showBeam() : ctrl.hideBeam();
+const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
+  val === BeamDisplayLevel.None ? ctrl.hideBeam() : ctrl.showBeam(val);
 };
 </script>
 
