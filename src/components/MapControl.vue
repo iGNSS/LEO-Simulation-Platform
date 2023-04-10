@@ -1,54 +1,66 @@
 <template>
   <div class="overlay">
-    <q-chip icon="event">Add to calendar</q-chip>
-    <q-btn color="primary" icon="mail" label="On Left" />
-    <q-btn color="secondary" size="sm" icon-right="mail" label="On Right" />
-    <q-btn color="red" icon="mail" icon-right="send" label="On Left and Right" />
-    <br />
-    <q-btn icon="phone" label="Stacked" stack glossy color="purple" />
-    <q-btn flat color="primary" label="Flat" />
-    <q-btn flat rounded color="primary" label="Flat Rounded" />
-    <q-btn flat round color="primary" icon="card_giftcard" />
-    <q-btn outline color="primary" label="Outline" />
-    <q-btn outline rounded color="primary" label="Outline Rounded" />
-    <q-btn outline round color="primary" icon="card_giftcard" />
-    <q-btn push color="primary" label="Push" />
-    <q-btn push color="primary" round icon="card_giftcard" />
-    <q-btn push color="white" text-color="primary" label="Push" />
-    <q-btn push color="white" text-color="primary" round icon="card_giftcard" />
+    <div style="background-color: rgba(100, 100, 100, 50); width: max-content">
+      <q-checkbox v-model="controls.visibleSpread2" label="显示波束" />
+      <q-checkbox v-model="controls.visibleSpread" label="显示全部波束" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import dat from "dat.gui";
+import { SimulatorControl } from "@/api/simulator";
+import data1 from "@/assets/czml/dataAll.czml?raw";
 import { useVueCesium } from "vue-cesium";
+import type { VcReadyObject } from "vue-cesium/es/utils/types";
+import { registerEvent } from "./interact";
 
 const $vc = useVueCesium();
-const viewer = $vc.viewer; // It may be undefined before mounted
-console.log($vc, viewer);
+const viewer = $vc.viewer;
+console.log("vc", viewer);
 
-const gui = new dat.GUI();
-
-const controls = {
-  visibleSpread: false,
-};
-
-const controls2 = {
-  visibleSpread2: false,
-};
-
-gui.add(controls2, "visibleSpread2").name("显示波束");
-//gui.add(controls, "visibleSpread").name("显示全部波束");
-
-onMounted(() => {
-  console.log("mounted", $vc, $vc.viewer); // Still can't get viewer
-  const $q = useQuasar();
-  $q.notify({ type: "info", position: "bottom", message: "Hello Satellite!" });
+const controls = reactive({
+  visibleSpread: false, // 显示全部波束
+  visibleSpread2: false, // 显示波束
 });
 
-// Use this
-$vc.creatingPromise.then((readyObj: VcReadyObject) => {
-  console.log("creatingPromise", readyObj.viewer); // instanceof Cesium.Viewer
+/* {
+// 直接操作viewer | 注册点击事件
+var alti_String = (viewer.camera.positionCartographic.height / 1000).toFixed(2);
+  //altitude_show.innerHTML = alti_String;
+  
+  var altitude_show = document.getElementById("altitude_show");
+  viewer.camera.changed.addEventListener(() => {
+    // 当前高度
+    let height = viewer.camera.positionCartographic.height;
+    alti_String = (viewer.camera.positionCartographic.height / 1000).toFixed(2);
+    if (altitude_show) {
+      altitude_show.innerHTML = alti_String;
+    }
+  });} */
+
+$vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
+  const ctrl = new SimulatorControl(viewer, {
+    circleColor: Cesium.Color.WHITE,
+    visibleSpread: false,
+  });
+  await ctrl.load(data1);
+  ctrl.addUser(10);
+  // 然后要注册事件
+  // registerEvent(viewer);
+  viewer.clock.shouldAnimate = true;
+  // 注册监听事件，在postRenderListener回调函数中添加
+  viewer.clock.onTick.addEventListener(() => {
+    if (!ctrl.dataSource) throw "No datasource!";
+    // ctrl.RefreshNear();
+    // ctrl.sim.updatestate(viewer.clock.currentTime);
+    // ctrl.sim.closebeam();
+    // console.log(ctrl.showdata()); // TODO: show data
+    /* if (controls2.visibleSpread2) {
+        ctrl.showbeam();
+      } else {
+        ctrl.hideBeam();
+      } */
+  });
 });
 </script>
 

@@ -9,8 +9,8 @@
       :animation="false"
       :timeline="true"
       :fullscreen-button="false"
-      :scene3-d-only="false"
-      :should-animate="true"
+      :scene3-d-only="true"
+      :should-animate="false"
       :info-box="false"
       :scene-mode="3"
       :request-render-mode="false"
@@ -24,17 +24,17 @@
         <!-- https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer -->
         <vc-imagery-provider-arcgis ref="provider" />
       </vc-layer-imagery>
-      <map-control />
+      <map-control v-if="initialized" />
     </vc-viewer>
   </vc-config-provider>
 </template>
 
 <script setup lang="ts">
-import { useVueCesium, VcConfigProvider, VcViewer } from "vue-cesium";
+import { VcConfigProvider, VcImageryProviderArcgis, VcLayerImagery, VcViewer } from "vue-cesium";
+import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import MapControl from "./MapControl.vue";
-import { VcLayerImagery, VcImageryProviderArcgis } from "vue-cesium";
-import data1 from "@/assets/czml/Data1.czml?raw"
-import {CZML2Sat} from "@/utils/sat.js"
+
+const initialized = ref(false);
 
 const vcConfig = reactive({
   cesiumPath: "https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js",
@@ -42,19 +42,15 @@ const vcConfig = reactive({
 
 const provider = ref(null);
 
-/* onMounted(() => {
-  console.log(provider.value);
-}); */
-
-const onViewerReady = ({ Cesium, viewer }) => {
+const onCesiumReady = (e: any) => {
+  console.log("CesiumReady", e); // 这里e为cesium
+};
+// Viewer gets ready later than Cesium.
+const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
+  console.log("Viewer Ready", Cesium);
+  initialized.value = true;
   function icrf(scene: Cesium.Scene, time: Cesium.JulianDate) {
-    if (scene.mode !== Cesium.SceneMode.SCENE3D) {
-      return;
-    }
-
-    CZML2Sat(data1);
-    SatInit(6, 11, 10, 48);
-    addUser(userNum);
+    if (scene.mode !== Cesium.SceneMode.SCENE3D) return;
 
     const icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
     if (Cesium.defined(icrfToFixed)) {
@@ -67,9 +63,6 @@ const onViewerReady = ({ Cesium, viewer }) => {
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.postUpdate.addEventListener(icrf);
-};
-const onCesiumReady = e => {
-  console.log(e);
 };
 </script>
 

@@ -10,8 +10,6 @@ import "quasar/src/css/index.sass";
 
 import "./styles/index.scss";
 
-// import * as ElementPlusIconsVue from "@element-plus/icons-vue";
-
 const app = createApp(App);
 app.use(Quasar, {
   plugins: { Notify },
