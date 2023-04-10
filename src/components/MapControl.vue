@@ -1,8 +1,64 @@
 <template>
-  <div class="overlay">
-    <div style="background-color: rgba(100, 100, 100, 50); width: max-content">
-      <q-checkbox v-model="controls.visibleSpread2" label="显示波束" />
-      <q-checkbox v-model="controls.visibleSpread" label="显示全部波束" />
+  <div class="overlay" v-if="initialized">
+    <div class="left">
+      <q-card dark>
+        <q-card-section class="bg-grey-8">
+          <div class="text-h6">视角调整</div>
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model.number="controls.height"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角高度"
+            suffix="km"
+            @changed="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.longitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角经度"
+            suffix="°"
+            @changed="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.latitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角纬度"
+            suffix="°"
+            @changed="onCameraPositionChanged"
+          />
+        </q-card-section>
+      </q-card>
+      <q-card dark class="info-card">
+        <q-card-section class="bg-grey-8">
+          <div class="text-h6">低轨卫星星座参数</div>
+        </q-card-section>
+        <q-card-section>
+          <p>轨道卫星个数：{{ curInfo.satelliteNum }}</p>
+          <p>轨道数：{{ curInfo.laneNum }}</p>
+          <p>用户个数：{{ curInfo.userNum }}</p>
+          <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
+          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p>
+          <p>开启波束个数：{{ curInfo.openNum }}</p>
+          <p>被覆盖用户个数：{{ curInfo.coveredNum }}</p>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="right">
+      <div style="background-color: rgba(100, 100, 100, 50); width: max-content">
+        <q-checkbox
+          v-model="controls.visibleSpread2"
+          label="显示波束"
+          @changed="onVisibleSpread2Changed"
+        />
+        <q-checkbox v-model="controls.visibleSpread" label="显示全部波束" />
+      </div>
     </div>
   </div>
 </template>
@@ -18,35 +74,38 @@ const $vc = useVueCesium();
 const viewer = $vc.viewer;
 console.log("vc", viewer);
 
+const initialized = ref(false);
+
 const controls = reactive({
+  height: 10000,
+  longitude: 120,
+  latitude: 32,
   visibleSpread: false, // 显示全部波束
   visibleSpread2: false, // 显示波束
 });
 
-/* {
-// 直接操作viewer | 注册点击事件
-var alti_String = (viewer.camera.positionCartographic.height / 1000).toFixed(2);
-  //altitude_show.innerHTML = alti_String;
-  
-  var altitude_show = document.getElementById("altitude_show");
-  viewer.camera.changed.addEventListener(() => {
-    // 当前高度
-    let height = viewer.camera.positionCartographic.height;
-    alti_String = (viewer.camera.positionCartographic.height / 1000).toFixed(2);
-    if (altitude_show) {
-      altitude_show.innerHTML = alti_String;
-    }
-  });} */
+const curInfo = reactive({
+  openNum: 0,
+  coveredNum: 0,
+  longitude: 0,
+  latitude: 0,
+  height: 0,
+  satelliteNum: 0,
+  laneNum: 0,
+  userNum: 0,
+});
+
+const ctrl = new SimulatorControl(viewer, {
+  circleColor: Cesium.Color.WHITE,
+  visibleSpread: false,
+});
 
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
-  const ctrl = new SimulatorControl(viewer, {
-    circleColor: Cesium.Color.WHITE,
-    visibleSpread: false,
-  });
+  console.log("Init!");
   await ctrl.load(data1);
-  ctrl.addUser(10);
+  ctrl.addUsers();
   // 然后要注册事件
-  // registerEvent(viewer);
+  registerEvent(viewer);
   viewer.clock.shouldAnimate = true;
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
@@ -54,15 +113,29 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     ctrl.refreshNear();
     ctrl.sim.updateState(viewer.clock.currentTime);
     ctrl.sim.closeBeam();
-    // console.log(ctrl.showdata()); // TODO: show data
-     if (controls.visibleSpread2) {
-        ctrl.showBeam();
-        //console.log(ctrl.status)
-      } else {
-        ctrl.hideBeam();
-      } 
+    Object.assign(curInfo, ctrl.showData());
+
+    const position = viewer.camera.positionCartographic;
+    controls.longitude = Cesium.Math.toDegrees(position.longitude);
+    controls.latitude = Cesium.Math.toDegrees(position.latitude);
+    controls.height = position.height / 1000;
   });
+  initialized.value = true;
 });
+
+const onCameraPositionChanged = () => {
+  viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(
+      controls.longitude,
+      controls.latitude,
+      controls.height * 1000
+    ),
+  });
+};
+
+const onVisibleSpread2Changed = (val: boolean) => {
+  val ? ctrl.showBeam() : ctrl.hideBeam();
+};
 </script>
 
 <style lang="scss">
@@ -74,9 +147,19 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   height: 100%;
   z-index: 5;
   pointer-events: none;
-}
+  * {
+    pointer-events: all;
+  }
+  .left {
+    float: left;
 
-.overlay * {
-  pointer-events: all;
+    .info-card {
+      width: 250px;
+      // background-color: ;
+    }
+  }
+  .right {
+    float: right;
+  }
 }
 </style>

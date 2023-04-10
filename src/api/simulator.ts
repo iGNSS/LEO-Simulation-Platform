@@ -50,9 +50,9 @@ export class Simulator {
   public readonly beamShow: any[][];
   public readonly userPosition: Cesium.Cartesian3[];
   public readonly satellitePosition: Cesium.PositionProperty[];
-  public readonly state: int[][];
+  public readonly state: boolean[][];
   public readonly status: SatelliteStatus[];
-  public readonly near: number[][];
+  public readonly near: boolean[][];
   public readonly angle: number[][];
 
   constructor(laneNum: int, satelliteNum: int, userNum: int, beamNum: int) {
@@ -67,10 +67,10 @@ export class Simulator {
     this.beamPosition = createArray2DEmpty(laneNum * satelliteNum);
     this.beamShow = createArray2DEmpty(laneNum * satelliteNum);
 
-    this.state = createArray2DFilled(laneNum * satelliteNum * beamNum, userNum, -1);
+    this.state = createArray2DFilled(laneNum * satelliteNum * beamNum, userNum, false);
     this.status = Array(laneNum * satelliteNum * beamNum).fill(SatelliteStatus.Open);
 
-    this.near = createArray2DFilled(laneNum * satelliteNum, userNum, -1);
+    this.near = createArray2DFilled(laneNum * satelliteNum, userNum, false);
     this.angle = createArray2DEmpty(laneNum * satelliteNum * beamNum);
 
     this.userPosition = [];
@@ -82,11 +82,8 @@ export class Simulator {
     for (let i = 0; i < this.laneNum * this.satelliteNum; i++) {
       for (let k = 0; k < this.userNum; k++) {
         for (let j = 0; j < this.beamNum; j++) {
-          if (this.near[i][k] === 1) {
-            this.state[i * this.beamNum + j][k] = this.getValue(i, k, j, currentTime).iscorverd;
-          } else {
-            this.state[i * this.beamNum + j][k] = 0;
-          }
+          this.state[i * this.beamNum + j][k] =
+            this.near[i][k] && this.getValue(i, k, j, currentTime).isCovered;
         }
       }
     }
@@ -106,11 +103,11 @@ export class Simulator {
     const angleBU = Cesium.Cartesian3.angleBetween(vectorUS, vectorBS);
 
     const distance = Cesium.Cartesian3.distance(positionS, positionU);
-    const iscorverd = distance < 2400000 && angleBU < BW / 2 ? 1 : 0;
+    const isCovered = distance < 2400000 && angleBU < BW / 2;
 
     return {
       angle: angleBU,
-      iscorverd,
+      isCovered,
     };
   }
 
@@ -120,10 +117,10 @@ export class Simulator {
       N = 0;
 
     for (let k = 0; k < this.userNum; k++) {
-      if (this.state[n][k] === 1) {
+      if (this.state[n][k]) {
         D++;
         for (let m = 0; m < this.laneNum * this.satelliteNum * this.beamNum; m++) {
-          N += this.state[m][k];
+          N += this.state[m][k] ? 1 : 0;
         }
       }
     }
@@ -133,16 +130,15 @@ export class Simulator {
 
   //找出所有需要覆盖用户的下标集合
   coveredUser() {
-    const covereduserindex = [];
+    const coveredUsers = [];
     for (let k = 0; k < this.userNum; k++) {
-      for (let m = 0; m < this.laneNum * this.satelliteNum * this.beamNum; m++) {
+      for (let m = 0; m < this.laneSatelliteBeamNum; m++) {
         if (this.state[m][k]) {
-          covereduserindex.push(k);
-          //break; // ????? 为什么break
+          coveredUsers.push(k);
         }
       }
     }
-    return covereduserindex;
+    return coveredUsers;
   }
 
   //检测是否所有用户被覆盖
@@ -152,7 +148,7 @@ export class Simulator {
     for (const idx of covereduserindex) {
       let b = false;
       for (let m = 0; m < this.laneNum * this.satelliteNum * this.beamNum; m++) {
-        if (this.state[m][idx] === 1 && this.status[m] == SatelliteStatus.Open) {
+        if (this.state[m][idx] && this.status[m] == SatelliteStatus.Open) {
           // TODO state2
           b = true;
           break;
@@ -168,29 +164,30 @@ export class Simulator {
 
   closeBeam() {
     //找出所有待命波束下标
-    const standbybeamindex = [];
+    const standbyBeams = [];
     for (let i = 0; i < this.laneNum * this.satelliteNum * this.beamNum; i++) {
       if (this.count(i) != Number.NaN) {
-        standbybeamindex.push(i);
+        standbyBeams.push(i);
         this.status[i] = SatelliteStatus.Open;
       } else {
         this.status[i] = SatelliteStatus.Closed;
       }
     }
 
-    const v = standbybeamindex.map(i => this.count(i)); //重复程度
+    const v = standbyBeams.map(i => this.count(i)); //重复程度
 
     while (v.length > 0) {
       const t = Math.max(...v);
       const index = v.indexOf(t);
-      const beamindex = standbybeamindex[index];
+      const beamindex = standbyBeams[index];
       this.status[beamindex] = SatelliteStatus.Standby;
       if (!this.isWorking()) {
         this.status[beamindex] = SatelliteStatus.Open;
       }
       v.splice(index, 1);
-      standbybeamindex.splice(index, 1);
+      standbyBeams.splice(index, 1);
     }
+    return standbyBeams;
   }
 }
 
@@ -275,7 +272,7 @@ export class SimulatorControl {
       this.dataSource = dataSource;
       for (const satellite of dataSource.entities.values) {
         this.sim.satellitePosition.push(satellite.position!);
-        satellite.issatellite = true;
+        satellite.name = "satellite";
         this.createWaveEntity(satellite);
       }
     }
@@ -347,7 +344,7 @@ export class SimulatorControl {
           outlineWidth: 100,
         },
       });
-      waveEntity.show = true;
+      waveEntity.show = false;
       p.setInterpolationOptions({
         interpolationDegree: 5,
         interpolationAlgorithm: Cesium.LagrangePolynomialApproximation,
@@ -407,8 +404,8 @@ export class SimulatorControl {
     return positionBeam;
   }
 
-  public addUser(userN: int): void {
-    for (let i = 0; i < userN; i++) {
+  public addUsers(): void {
+    for (let i = 0; i < this.sim.userNum; i++) {
       const position = Cesium.Cartesian3.fromDegrees(
         Math.random() * 50 + 70,
         Math.random() * 30 + 30,
@@ -433,13 +430,13 @@ export class SimulatorControl {
         const ellipse = this.sim.beamShow[i][j];
         ellipse.show = this.config.visibleSpread;
         if (this.sim.status[i * this.sim.beamNum + j] === SatelliteStatus.Open) {
-          ellipse.material = Cesium.Color["RED"].withAlpha(1.5);
+          ellipse.material = Cesium.Color.RED.withAlpha(1.5);
           showallbeam = true;
         } else if (this.sim.status[i * this.sim.beamNum + j] === SatelliteStatus.Standby) {
-          ellipse.material = Cesium.Color["GREEN"].withAlpha(1.5);
+          ellipse.material = Cesium.Color.GREEN.withAlpha(1.5);
           showallbeam = true;
         } else {
-          ellipse.material = Cesium.Color["WHITE"].withAlpha(1.5);
+          ellipse.material = Cesium.Color.WHITE.withAlpha(1.5);
         }
       }
 
@@ -459,7 +456,7 @@ export class SimulatorControl {
   refreshNear() {
     if (!this.viewer.entities) return;
     const time = this.viewer.clock.currentTime;
-    for (let i = 0; i < this.sim.satelliteNum; i++) {
+    for (let i = 0; i < this.sim.laneSatelliteNum; i++) {
       for (let k = 0; k < this.sim.userNum; k++) {
         const positionS = Cesium.Cartographic.fromCartesian(
           this.sim.satellitePosition[i].getValue(time)!
@@ -470,9 +467,9 @@ export class SimulatorControl {
             Cesium.Math.toDegrees(positionS.longitude) - Cesium.Math.toDegrees(positionU.longitude)
           ) > 40
         ) {
-          this.sim.near[i][k] = 0;
+          this.sim.near[i][k] = false;
         } else {
-          this.sim.near[i][k] = 1;
+          this.sim.near[i][k] = true;
         }
       }
     }
@@ -494,27 +491,23 @@ export class SimulatorControl {
   showData() {
     let openNum = 0;
     //var satelliteNum = 11;
-    for (let i = 0; i < this.sim.laneNum * this.sim.satelliteNum * this.sim.beamNum; i++) {
+    for (let i = 0; i < this.sim.laneSatelliteBeamNum; i++) {
       if (this.sim.status[i] === SatelliteStatus.Open) {
         openNum++;
       }
     }
 
     const coveredNum = this.sim.coveredUser().length;
+    const position = this.viewer.camera.positionCartographic;
     return {
       satelliteNum: this.sim.satelliteNum,
       laneNum: this.sim.laneNum,
       userNum: this.sim.userNum,
-      ...this.viewer.camera.positionCartographic,
+      longitude: Cesium.Math.toDegrees(position.longitude),
+      latitude: Cesium.Math.toDegrees(position.latitude),
+      height: position.height,
       openNum,
       coveredNum,
     };
-    /* content.innerText = `轨道卫星个数: ${satelliteNum}\n`;
-    content.innerText += `轨道数: ${laneNum}\n`;
-    content.innerText += `用户个数: ${userNum}\n`;
-    content.innerText += `视角高: ${hei}km\n`;
-    content.innerText += `视角位置:( ${lon}, ${lat} )\n`;
-    content.innerText += `开启波束个数: ${openNum} \n`;
-    content.innerText += `被覆盖用户个数: ${coveredNum} \n`; */
   }
 }
