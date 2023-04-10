@@ -138,7 +138,7 @@ export class Simulator {
       for (let m = 0; m < this.laneNum * this.satelliteNum * this.beamNum; m++) {
         if (this.state[m][k]) {
           covereduserindex.push(k);
-          // break; // ????? 为什么break
+          //break; // ????? 为什么break
         }
       }
     }
@@ -213,7 +213,7 @@ export class SimulatorControl {
     this.viewer = viewer;
     this.dataSource = null;
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
-    this.sim = new Simulator(6, 11, 10, 48);
+    this.sim = new Simulator(6, 1, 10, 48);
   }
 
   public async load(text: string) {
@@ -284,7 +284,7 @@ export class SimulatorControl {
   // 创建 光波Entity
   private createWaveEntity(entity: Cesium.Entity) {
     this.createCircle(entity);
-    // this.createBeamEntities(entity);
+    this.createBeamEntities(entity);
   }
 
   //创建圆面

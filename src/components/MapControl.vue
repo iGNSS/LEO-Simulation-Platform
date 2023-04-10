@@ -51,15 +51,16 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
     if (!ctrl.dataSource) throw "No datasource!";
-    // ctrl.RefreshNear();
-    // ctrl.sim.updatestate(viewer.clock.currentTime);
-    // ctrl.sim.closebeam();
+    ctrl.refreshNear();
+    ctrl.sim.updateState(viewer.clock.currentTime);
+    ctrl.sim.closeBeam();
     // console.log(ctrl.showdata()); // TODO: show data
-    /* if (controls2.visibleSpread2) {
-        ctrl.showbeam();
+     if (controls.visibleSpread2) {
+        ctrl.showBeam();
+        //console.log(ctrl.status)
       } else {
         ctrl.hideBeam();
-      } */
+      } 
   });
 });
 </script>
