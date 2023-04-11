@@ -233,10 +233,10 @@ const loadAndRun = async (czmlStr: string) => {
     $q.notify({ type: "info", message: "加载新数据集" });
   }
   const dataset = new Dataset(czmlStr, {
-    satelliteNum: 1,
+    satelliteNum: 11,
     userNum: 20,
     showLabel: false,
-    modelUrl: "/gltf-models/weixin_fixed.gltf",
+    modelUrl: "/gltf-models/satellite.gltf",
   });
   await ctrl.load(await dataset.load());
   $q.notify({ type: "info", message: "加载完成！" });

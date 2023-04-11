@@ -47,6 +47,17 @@ export class Dataset {
     this.laneNum = czml.length - 1;
     let newCopies = [czml[0]];
     for (const item of czml.slice(1)) {
+      //  移除billboard
+      delete item.billboard;
+      // 是否显示标签
+      item.label.show = this.options.showLabel;
+      //添加模型
+      item.model = {
+        gltf: this.options.modelUrl,
+        scale: 10.0,
+        minimumPixelSize: 32,
+        maximumPixelSize: 64,
+      };
       for (let j = 0; j < this.options.satelliteNum; j++) {
         let copy = JSON.parse(JSON.stringify(item));
         if (j > 0) {
@@ -58,17 +69,6 @@ export class Dataset {
           // 修改 线的颜色
           //copy.path.material.solidColor.color.rgba = lineColor
         }
-        //  移除billboard
-        delete copy.billboard;
-        // 是否显示标签
-        copy.label.show = this.options.showLabel;
-        //添加模型
-        copy.model = {
-          gltf: this.options.modelUrl,
-          scale: 1.0,
-          minimumPixelSize: 32,
-          maximumPixelSize: 64,
-        };
         copy.id = `${copy.id} ${j + 1}`;
         copy.label.text = `${copy.label.text} ${j + 1}`;
         newCopies.push(copy);
