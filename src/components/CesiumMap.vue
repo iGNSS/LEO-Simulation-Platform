@@ -66,11 +66,11 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
 };
 </script>
 
-<style scoped>
+<style lang="scss">
 #cesiumContainer {
-  /* height: 100vh;
-  width: 100vw;
-  overflow: hidden; */
+  height: 100vh !important;
+  width: 100vw !important;
+  overflow: hidden;
   z-index: -5;
 }
 </style>

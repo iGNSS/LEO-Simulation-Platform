@@ -60,16 +60,37 @@
           <div class="text-h6">波束显示</div>
         </q-card-section>
         <q-card-section>
-          <q-slider
+          <q-file
             dark
-            v-model="controls.beamDisplay"
-            color="deep-orange"
-            markers
-            :marker-labels="v => BeamDisplayLevel[v].toString()"
-            :min="0"
-            :max="2"
-            @change="onBeamDisplayChanged"
-          />
+            filled
+            v-model="controls.file"
+            label="卫星数据文件"
+            accept=".czml"
+            @update:model-value="onFileUpload"
+          >
+            <template v-slot:prepend>
+              <q-icon name="cloud_upload" />
+            </template>
+          </q-file>
+          <q-item>
+            <q-item-section avatar>
+              <q-icon color="deep-orange" name="brightness_medium" />
+            </q-item-section>
+            <q-item-section>
+              <q-slider
+                dark
+                v-model="controls.beamDisplay"
+                color="deep-orange"
+                markers
+                snap
+                class="beam-slider"
+                :marker-labels="v => BeamDisplayLevel[v].toString()"
+                :min="0"
+                :max="2"
+                @change="onBeamDisplayChanged"
+              />
+            </q-item-section>
+          </q-item>
         </q-card-section>
       </q-card>
     </div>
@@ -78,11 +99,14 @@
 </template>
 
 <script setup lang="ts">
-import { SimulatorControl, BeamDisplayLevel } from "@/api/simulator";
+import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-control";
 import data1 from "@/assets/czml/dataAll.czml?raw";
 import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import { registerEvent } from "./interact";
+import modelUrl from "@/assets/gltf-models/weixin_fixed.gltf?url";
+import imageUrl from "@/assets/img/终端.png?url";
+import { Dataset } from "@/simulation/dataset";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
@@ -98,8 +122,7 @@ const controls = reactive({
   longitudeFocused: false,
   latitudeFocused: false,
   beamDisplay: BeamDisplayLevel.None,
-  visibleSpread: false, // 显示全部波束
-  visibleSpread2: false, // 显示波束
+  file: null,
 });
 
 const curInfo = reactive({
@@ -113,24 +136,34 @@ const curInfo = reactive({
   userNum: 0,
 });
 
-const ctrl = new SimulatorControl(viewer, {
-  circleColor: Cesium.Color.WHITE,
-});
+let ctrl: SimulatorControl | undefined = undefined;
 
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   console.log("Init!");
-  await ctrl.load(data1);
-  ctrl.addUsers();
+  const dataset = new Dataset(data1, {
+    satelliteNum: 1,
+    userNum: 20,
+    showLabel: false,
+    modelUrl: modelUrl,
+  });
+  await dataset.load();
+  const _ctrl = new SimulatorControl(viewer, dataset, {
+    circleColor: Cesium.Color.WHITE,
+    terminalImageUrl: imageUrl,
+    satelliteModelUrl: modelUrl,
+  });
+  await _ctrl.load();
   // 然后要注册事件
   registerEvent(viewer);
   viewer.clock.shouldAnimate = true;
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
-    if (!ctrl.dataSource) throw "No datasource!";
-    ctrl.refreshNear();
-    ctrl.sim.updateState(viewer.clock.currentTime);
-    ctrl.sim.closeBeam();
-    Object.assign(curInfo, ctrl.showData());
+    _ctrl.sim.update(viewer.clock.currentTime);
+    _ctrl.sim.closeBeam();
+    if (controls.beamDisplay != BeamDisplayLevel.None) {
+      _ctrl.showBeams(controls.beamDisplay);
+    }
+    Object.assign(curInfo, _ctrl.getCurrentInfo());
 
     const position = viewer.camera.positionCartographic;
     if (!controls.longitudeFocused) controls.longitude = Cesium.Math.toDegrees(position.longitude);
@@ -138,6 +171,7 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     if (!controls.heightFocused) controls.height = position.height / 1000;
   });
   initialized.value = true;
+  ctrl = _ctrl;
 });
 
 const onCameraPositionChanged = () => {
@@ -151,7 +185,17 @@ const onCameraPositionChanged = () => {
 };
 
 const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
-  val === BeamDisplayLevel.None ? ctrl.hideBeam() : ctrl.showBeam(val);
+  if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
+};
+
+const onFileUpload = async (file: File | null) => {
+  if (!file) return;
+  console.log(await file.text());
+  /* const ab = await file.arrayBuffer();
+  const txt =
+    "data:image/png;base64," +
+    window.btoa(new Uint8Array(ab).reduce((data, byte) => data + String.fromCharCode(byte), ""));
+  console.log(val); */
 };
 </script>
 
@@ -177,6 +221,12 @@ const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
   }
   .right {
     float: right;
+  }
+  .q-card__section--vert {
+    padding: 8px;
+  }
+  .text-h6 {
+    font-size: 1rem;
   }
 }
 </style>
