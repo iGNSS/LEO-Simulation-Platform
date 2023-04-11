@@ -133,8 +133,6 @@
 </template>
 
 <script setup lang="ts">
-import modelUrl from "@/assets/gltf-models/weixin_fixed.gltf?url";
-import imageUrl from "@/assets/img/终端.png?url";
 import { Dataset } from "@/simulation/dataset";
 import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-control";
 import { useVueCesium } from "vue-cesium";
@@ -201,7 +199,7 @@ const curInfo = reactive({
 
 let ctrl: SimulatorControl = new SimulatorControl(viewer, {
   circleColor: Cesium.Color.WHITE,
-  terminalImageUrl: imageUrl,
+  terminalImageUrl: "/img/终端.png",
 });
 
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
@@ -238,7 +236,7 @@ const loadAndRun = async (czmlStr: string) => {
     satelliteNum: 1,
     userNum: 20,
     showLabel: false,
-    modelUrl: modelUrl,
+    modelUrl: "/gltf-models/weixin_fixed.gltf",
   });
   await ctrl.load(await dataset.load());
   $q.notify({ type: "info", message: "加载完成！" });
@@ -296,7 +294,7 @@ const onFileUpload = async (file: File | null) => {
   flex-wrap: wrap;
   justify-content: space-between;
   background: black;
-  padding: 2px;
+  padding: 2px 8px;
   border-radius: 4px;
   margin: 2px 0;
 }
