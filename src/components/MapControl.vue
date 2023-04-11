@@ -45,14 +45,19 @@
         <q-card-section class="bg-grey-9">
           <div class="text-h6">低轨卫星星座参数</div>
         </q-card-section>
-        <q-card-section>
-          <p>轨道卫星个数：{{ curInfo.satelliteNum }}</p>
-          <p>轨道数：{{ curInfo.laneNum }}</p>
-          <p>用户个数：{{ curInfo.userNum }}</p>
-          <!-- <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
-          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p> -->
-          <p>开启波束个数：{{ curInfo.openNum }}</p>
-          <p>被覆盖用户个数：{{ curInfo.coveredNum }}</p>
+        <q-card-section class="info-items">
+          <div>
+            <span>轨道数</span><span>{{ curInfo.laneNum }}</span>
+          </div>
+          <div>
+            <span>轨道卫星数</span><span>{{ curInfo.satelliteNum }}</span>
+          </div>
+          <div>
+            <span>开启波束数</span><span>{{ curInfo.openNum }}</span>
+          </div>
+          <div>
+            <span>被覆盖/用户数</span><span>{{ curInfo.coveredNum }} / {{ curInfo.userNum }}</span>
+          </div>
         </q-card-section>
       </q-card>
       <q-card dark>
@@ -94,7 +99,36 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="right"></div>
+    <div class="right">
+      <q-card dark bordered>
+        <q-card-section>
+          <div class="text-h6">仿真控制</div>
+        </q-card-section>
+        <q-separator dark inset />
+        <q-card-section class="time-panel">
+          <div>
+            <p>
+              <span class="text-grey-5">仿真时间：</span>
+              {{ timeOptions.now }}
+            </p>
+            <p>
+              <span class="text-grey-5">仿真倍率：</span>
+              {{ timeFn.speed.value }}
+            </p>
+          </div>
+          <div class="row justify-between">
+            <q-btn
+              square
+              :icon="timeOptions.playing ? 'pause' : 'play_arrow'"
+              @click="timeFn.pause"
+            />
+            <q-btn square icon="multiple_stop" @click="timeFn.reverse" />
+            <q-btn square icon="remove" @click="timeFn.speedDown" />
+            <q-btn square icon="add" @click="timeFn.speedUp" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
   </div>
 </template>
 
@@ -130,6 +164,30 @@ const controls = reactive({
   file: null,
 });
 
+const timeOptions = reactive({
+  now: "",
+  playing: true,
+  speed: 0,
+  forward: true,
+});
+
+const timeFn = {
+  speed: computed(() => Math.pow(2, timeOptions.speed) * (timeOptions.forward ? 1 : -1)),
+  pause() {
+    viewer.clock.shouldAnimate = timeOptions.playing = !timeOptions.playing;
+  },
+  reverse() {
+    timeOptions.forward = !timeOptions.forward;
+  },
+  speedDown() {
+    timeOptions.speed--;
+  },
+  speedUp() {
+    timeOptions.speed++;
+  },
+};
+watch(timeFn.speed, () => (viewer.clock.multiplier = timeFn.speed.value));
+
 const curInfo = reactive({
   openNum: 0,
   coveredNum: 0,
@@ -153,6 +211,8 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   viewer.clock.shouldAnimate = true;
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
+    timeOptions.now = viewer.clock.currentTime.toString().replace(/[TZ]|(\.\d+)/g, " ");
+
     const position = viewer.camera.positionCartographic;
     if (!controls.longitudeFocused) controls.longitude = Cesium.Math.toDegrees(position.longitude);
     if (!controls.latitudeFocused) controls.latitude = Cesium.Math.toDegrees(position.latitude);
@@ -218,11 +278,7 @@ const onFileUpload = async (file: File | null) => {
   }
   .left {
     float: left;
-
-    .info-card {
-      width: 250px;
-      // background-color: ;
-    }
+    width: 200px;
   }
   .right {
     float: right;
@@ -232,6 +288,25 @@ const onFileUpload = async (file: File | null) => {
   }
   .text-h6 {
     font-size: 1rem;
+  }
+}
+
+.info-card .info-items div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  background: black;
+  padding: 2px;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+.time-panel {
+  width: 250px;
+  button {
+    font-size: 10px;
+    padding: 5px 10px;
+    background-color: black;
   }
 }
 </style>
