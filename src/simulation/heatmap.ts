@@ -40,7 +40,7 @@ export class HeatMap{
     });
     }
 
-    public setData(max, datas){
+    public setData(max:number, datas){
       heatMap.setData({max: max, data: datas});
     }
 
@@ -49,8 +49,8 @@ export class HeatMap{
       name: "Rotating rectangle with rotating texture coordinate",
       show: true,
       rectangle: {
-        coordinates: scope,
-        material: heatMap._renderer.canvas, // 核心语句，填充热力图
+        coordinates: this.scope,
+        material: this.heatMap._renderer.canvas, // 核心语句，填充热力图
       },
     });
   }
