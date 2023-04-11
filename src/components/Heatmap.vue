@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { VcOverlayHeatmapRef } from "vue-cesium";
+import { VcOverlayHeatmap } from "vue-cesium";
 import {
   HeatmapConfiguration,
   VcHeatMapData,
@@ -21,7 +21,7 @@ import {
   VcRectangle,
 } from "vue-cesium/es/utils/types";
 
-const heatmap = ref<VcOverlayHeatmapRef>();
+const heatmap = ref(null);
 
 const props = reactive({
   max: 0,
@@ -45,17 +45,17 @@ const options: HeatmapConfiguration = reactive({
 
 let data = ref<VcHeatMapData[]>([]);
 
-const setScope = (scope: Cesium.Rectangle, radius: int) => {
+function setScope(scope: Cesium.Rectangle, radius: int) {
   options.radius = radius;
   const width = ((scope.east - scope.west) / Cesium.Math.PI) * 1000;
   const height = ((scope.north - scope.south) / Cesium.Math.PI) * 1000;
-};
+}
 
-const setData = (min: number, max: number, data_: VcHeatMapData[]) => {
+function setData(min: number, max: number, data_: VcHeatMapData[]) {
   props.min = min;
   props.max = max;
   data.value = data_;
-};
+}
 
 const onHeatmapReady = ({ Cesium, viewer, cesiumObject }: VcReadyObject) => {};
 

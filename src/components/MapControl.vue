@@ -114,6 +114,9 @@ console.log("vc", viewer);
 const $q = useQuasar();
 console.log("useQuasar", $q);
 
+const heatmap = (inject("heatmap") as any).value;
+console.log("heatmap", heatmap.setData, heatmap.setScope);
+
 const initialized = ref(false);
 
 const controls = reactive({

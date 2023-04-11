@@ -68,7 +68,7 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
   viewer.scene.postUpdate.addEventListener(icrf);
 };
 
-provide("heatmap", heatmap.value);
+provide("heatmap", heatmap);
 </script>
 
 <style lang="scss">
