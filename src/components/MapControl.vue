@@ -49,8 +49,8 @@
           <p>轨道卫星个数：{{ curInfo.satelliteNum }}</p>
           <p>轨道数：{{ curInfo.laneNum }}</p>
           <p>用户个数：{{ curInfo.userNum }}</p>
-          <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
-          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p>
+          <!-- <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
+          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p> -->
           <p>开启波束个数：{{ curInfo.openNum }}</p>
           <p>被覆盖用户个数：{{ curInfo.coveredNum }}</p>
         </q-card-section>
@@ -106,12 +106,13 @@ import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-contr
 import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import { registerEvent } from "./interact";
+import { gird } from "@/simulation/gird";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
 console.log("vc", viewer);
 const $q = useQuasar();
-console.log("useQuasar",$q);
+console.log("useQuasar", $q);
 
 const initialized = ref(false);
 
