@@ -20,8 +20,9 @@ export class Dataset {
     this.createUsers();
   }
 
-  public async load(): Promise<void> {
+  public async load(): Promise<Dataset> {
     await this.loadText(this.file instanceof File ? await this.file.text() : this.file);
+    return this;
   }
 
   private async loadText(text: string): Promise<void> {

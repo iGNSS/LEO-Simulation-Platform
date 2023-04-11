@@ -3,10 +3,10 @@ import { Dataset } from "./dataset";
 import { Satellite } from "./satellite";
 import { Simulator } from "./simulator";
 import { User } from "./user";
+
 export interface DisplayConfig {
   circleColor: Cesium.Color;
   terminalImageUrl: string;
-  satelliteModelUrl: string;
 }
 
 export enum BeamDisplayLevel {
@@ -17,28 +17,31 @@ export enum BeamDisplayLevel {
 
 export class SimulatorControl {
   public readonly viewer: Cesium.Viewer;
-  private readonly dataset: Dataset;
-  public dataSource: Cesium.DataSource | null = null;
-
   public readonly sim: Simulator;
+  public readonly config: DisplayConfig;
   private readonly billboards: Cesium.BillboardCollection;
-  public config: DisplayConfig;
+
+  private dataset: Dataset | undefined = undefined;
+  public dataSource: Cesium.DataSource | null = null;
+  public valid: boolean = false;
 
   public get ellipsoid(): Cesium.Ellipsoid {
     return this.viewer.scene.globe.ellipsoid;
   }
 
-  constructor(viewer: Cesium.Viewer, dataset: Dataset, config: DisplayConfig) {
+  constructor(viewer: Cesium.Viewer, config: DisplayConfig) {
     this.config = config;
     this.viewer = viewer;
-    this.dataset = dataset;
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
     this.sim = new Simulator();
   }
 
-  public async load(): Promise<void> {
-    await this.loadCZML(this.dataset.czml);
+  public async load(dataset: Dataset): Promise<void> {
+    if (this.valid) this.clear();
+    this.dataset = dataset;
+    await this.loadCZML(dataset.czml);
     this.addUsers();
+    this.valid = true;
   }
 
   private async loadCZML(czml: any): Promise<void> {
@@ -52,7 +55,7 @@ export class SimulatorControl {
   }
 
   public addUsers(): void {
-    for (const userPos of this.dataset.users) {
+    for (const userPos of this.dataset!.users) {
       this.billboards.add({
         image: this.config.terminalImageUrl,
         position: userPos,
@@ -67,8 +70,16 @@ export class SimulatorControl {
     this.sim.satellites.forEach(s => s.showBeams(level));
   }
 
-  public hideBeams() {
+  public hideBeams(): void {
     this.sim.satellites.forEach(s => s.hideBeams());
+  }
+
+  public clear(): void {
+    this.sim.clear();
+    this.viewer.entities.removeAll();
+    this.billboards.removeAll();
+    // TODO: clear dataSource
+    this.valid = false;
   }
 
   //显示卫星状态矩阵
@@ -85,18 +96,12 @@ export class SimulatorControl {
   } */
 
   public getCurrentInfo() {
-    let openNum = 0;
-    for (const beam of this.sim.iterBeams()) {
-      if (beam.status === BeamStatus.Open) {
-        openNum++;
-      }
-    }
-
-    const coveredNum = this.sim.coveredUsers().length;
+    const openNum = this.sim.beams.filter(b => b.status == BeamStatus.Open).size();
+    const coveredNum = this.sim.coveredUsers().size();
     const position = this.viewer.camera.positionCartographic;
     return {
       satelliteNum: this.sim.satellites.length,
-      laneNum: this.dataset.laneNum,
+      laneNum: this.dataset!.laneNum,
       userNum: this.sim.users.length,
       longitude: Cesium.Math.toDegrees(position.longitude),
       latitude: Cesium.Math.toDegrees(position.latitude),

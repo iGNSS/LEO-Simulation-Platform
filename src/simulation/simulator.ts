@@ -1,7 +1,7 @@
-import { createArray2DEmpty, createArray2DFilled } from "@/utils/arrays";
 import { Satellite } from "./satellite";
 import { User } from "./user";
 import { Beam, BeamStatus } from "./beam";
+import Lazy from "lazy.js";
 
 export class Simulator {
   public readonly satellites: Satellite[] = [];
@@ -9,13 +9,23 @@ export class Simulator {
 
   constructor() {}
 
+  public get beams() {
+    return Lazy(this.satellites)
+      .map(s => s.beams)
+      .flatten();
+  }
+
   public *iterBeams(): Iterable<Beam> {
-    // return this.satellites.flatMap(s => s.beams);
     for (const sat of this.satellites) {
       for (const b of sat.beams) {
         yield b;
       }
     }
+  }
+
+  public clear(): void {
+    this.satellites.length = 0;
+    this.users.length = 0;
   }
 
   public update(time: Cesium.JulianDate): void {
@@ -30,69 +40,41 @@ export class Simulator {
     for (let k = 0; k < this.users.length; k++) {
       if (!beam.cover[k]) continue;
       D++;
-      for (const sat of this.satellites) {
-        for (const b of sat.beams) {
-          N += Number(b.cover[k]);
-        }
-      }
+      N += this.beams.filter(b => b.cover[k]).size();
     }
     return N / D;
   }
 
   //找出所有需要覆盖用户的下标集合
-  coveredUsers(): number[] {
-    const coveredUsers = [];
-    for (let k = 0; k < this.users.length; k++) {
-      for (const beam of this.iterBeams()) {
-        if (beam.cover[k]) {
-          coveredUsers.push(k);
-          break;
-        }
-      }
-    }
-    return coveredUsers;
+  public coveredUsers() {
+    return Lazy.range(this.users.length).filter(k => this.beams.some(b => b.cover[k]));
   }
 
   //检测是否所有用户被覆盖
   isWorking(): boolean {
-    const coveredUserIndices = this.coveredUsers();
-    for (const idx of coveredUserIndices) {
-      let b = false;
-      for (const beam of this.iterBeams()) {
-        if (beam.cover[idx] && beam.status === BeamStatus.Open) {
-          b = true;
-          break;
-        }
-      }
-      if (!b) return false;
-    }
-    return true;
+    // 判断是否每个都被open的覆盖了
+    return this.coveredUsers().every(idx => this.beams.some(b => b.coversUser(idx)));
   }
 
   closeBeam(): void {
     //找出所有待命波束
-    const standbyBeams = [];
+    const standbyBeams: [Beam, number][] = [];
     for (const beam of this.iterBeams()) {
-      if (Number.isFinite(this.countOverlap(beam))) {
-        standbyBeams.push(beam);
+      const o = this.countOverlap(beam);
+      if (Number.isFinite(o)) {
+        standbyBeams.push([beam, o]);
         beam.status = BeamStatus.Open;
       } else {
         beam.status = BeamStatus.Closed;
       }
     }
-
-    const overlap = standbyBeams.map(i => this.countOverlap(i)); //重复程度
-
-    while (overlap.length > 0) {
-      const t = Math.max(...overlap);
-      const index = overlap.indexOf(t);
-      const beam = standbyBeams[index];
-      beam.status = BeamStatus.Standby; // 这里在尝试关掉overlap大的
+    // 按覆盖率从大到小逐个尝试关掉
+    standbyBeams.sort((a, b) => a[1] - b[1]);
+    for (const beam of standbyBeams.map(t => t[0])) {
+      beam.status = BeamStatus.Standby;
       if (!this.isWorking()) {
         beam.status = BeamStatus.Open;
       }
-      overlap.splice(index, 1);
-      standbyBeams.splice(index, 1);
     }
   }
 }

@@ -45,9 +45,9 @@ export class Beam extends Simulatable {
   public readonly index: int;
 
   /** Whether the beam is covering any user */
-  cover: boolean[] = [];
+  public cover: boolean[] = [];
   /** Working status of the beam. */
-  status: BeamStatus = BeamStatus.Closed;
+  public status: BeamStatus = BeamStatus.Closed;
 
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
@@ -163,6 +163,10 @@ export class Beam extends Simulatable {
       angle: angleBU,
       isCovered,
     };
+  }
+
+  public coversUser(userIndex: int): boolean {
+    return this.status === BeamStatus.Open && this.cover[userIndex];
   }
 
   public updateDisplay(covered: boolean): void {

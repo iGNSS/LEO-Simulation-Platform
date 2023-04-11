@@ -99,18 +99,19 @@
 </template>
 
 <script setup lang="ts">
-import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-control";
-import data1 from "@/assets/czml/dataAll.czml?raw";
-import { useVueCesium } from "vue-cesium";
-import type { VcReadyObject } from "vue-cesium/es/utils/types";
-import { registerEvent } from "./interact";
 import modelUrl from "@/assets/gltf-models/weixin_fixed.gltf?url";
 import imageUrl from "@/assets/img/终端.png?url";
 import { Dataset } from "@/simulation/dataset";
+import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-control";
+import { useVueCesium } from "vue-cesium";
+import type { VcReadyObject } from "vue-cesium/es/utils/types";
+import { registerEvent } from "./interact";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
 console.log("vc", viewer);
+const $q = useQuasar();
+console.log("useQuasar",$q);
 
 const initialized = ref(false);
 
@@ -136,43 +137,48 @@ const curInfo = reactive({
   userNum: 0,
 });
 
-let ctrl: SimulatorControl | undefined = undefined;
+let ctrl: SimulatorControl = new SimulatorControl(viewer, {
+  circleColor: Cesium.Color.WHITE,
+  terminalImageUrl: imageUrl,
+});
 
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   console.log("Init!");
-  const dataset = new Dataset(data1, {
-    satelliteNum: 1,
-    userNum: 20,
-    showLabel: false,
-    modelUrl: modelUrl,
-  });
-  await dataset.load();
-  const _ctrl = new SimulatorControl(viewer, dataset, {
-    circleColor: Cesium.Color.WHITE,
-    terminalImageUrl: imageUrl,
-    satelliteModelUrl: modelUrl,
-  });
-  await _ctrl.load();
   // 然后要注册事件
   registerEvent(viewer);
   viewer.clock.shouldAnimate = true;
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
-    _ctrl.sim.update(viewer.clock.currentTime);
-    _ctrl.sim.closeBeam();
-    if (controls.beamDisplay != BeamDisplayLevel.None) {
-      _ctrl.showBeams(controls.beamDisplay);
-    }
-    Object.assign(curInfo, _ctrl.getCurrentInfo());
-
     const position = viewer.camera.positionCartographic;
     if (!controls.longitudeFocused) controls.longitude = Cesium.Math.toDegrees(position.longitude);
     if (!controls.latitudeFocused) controls.latitude = Cesium.Math.toDegrees(position.latitude);
     if (!controls.heightFocused) controls.height = position.height / 1000;
+
+    if (!ctrl.valid) return;
+
+    ctrl.sim.update(viewer.clock.currentTime);
+    ctrl.sim.closeBeam();
+    if (controls.beamDisplay != BeamDisplayLevel.None) {
+      ctrl.showBeams(controls.beamDisplay);
+    }
+    Object.assign(curInfo, ctrl.getCurrentInfo());
   });
   initialized.value = true;
-  ctrl = _ctrl;
 });
+
+const loadAndRun = async (czmlStr: string) => {
+  if (ctrl.valid) {
+    $q.notify({ type: "info", message: "加载新数据集" });
+  }
+  const dataset = new Dataset(czmlStr, {
+    satelliteNum: 1,
+    userNum: 20,
+    showLabel: false,
+    modelUrl: modelUrl,
+  });
+  await ctrl.load(await dataset.load());
+  $q.notify({ type: "info", message: "加载完成！" });
+};
 
 const onCameraPositionChanged = () => {
   viewer.camera.setView({
@@ -190,12 +196,7 @@ const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
 
 const onFileUpload = async (file: File | null) => {
   if (!file) return;
-  console.log(await file.text());
-  /* const ab = await file.arrayBuffer();
-  const txt =
-    "data:image/png;base64," +
-    window.btoa(new Uint8Array(ab).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-  console.log(val); */
+  await loadAndRun(await file.text());
 };
 </script>
 
