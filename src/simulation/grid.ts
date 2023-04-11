@@ -1,6 +1,7 @@
-export interface GridOptions {
+import { zip } from "lodash-es";
+import { VcHeatMapData } from "vue-cesium/es/utils/types";
 
-}
+export interface GridOptions {}
 
 export class Grid {
   public positions: Cesium.Cartographic[];
@@ -14,14 +15,13 @@ export class Grid {
     this.girdNum = 0;
     this.max = 0;
     const Re = 6371;
-    var dlon;
-    var dlat = (360 * inter) / (2 * Math.PI * Re);
+    const dlat = (360 * inter) / (2 * Math.PI * Re);
     for (
-      var lat = Cesium.Math.toDegrees(scope.south);
+      let lat = Cesium.Math.toDegrees(scope.south);
       lat <= Cesium.Math.toDegrees(scope.north);
       lat += dlat
     ) {
-      dlon = (360 * inter) / (2 * Math.PI * Re * Math.cos(Cesium.Math.toRadians(lat)));
+      const dlon = (360 * inter) / (2 * Math.PI * Re * Math.cos(Cesium.Math.toRadians(lat)));
       for (
         var lon = Cesium.Math.toDegrees(scope.west);
         lon <= Cesium.Math.toDegrees(scope.east);
@@ -33,20 +33,17 @@ export class Grid {
     }
   }
 
-  updateData(ss: number[]) {
+  public updateData(ss: number[]) {
     this.signalStrength = ss;
   }
 
-  toHeatmapData() {
-    var heatMapData = [];
-    for (var i = 0; i < this.girdNum; i++) {
-      var x = this.positions[i].longitude;
-      var y = this.positions[i].latitude;
-      x = (x / Math.PI) * 1000;
-      y = (y / Math.PI) * 1000;
-      var ss = this.signalStrength;
-      heatMapData.push({ x, y, ss });
-    }
-    return heatMapData;
+  public toHeatmapData(): VcHeatMapData[] {
+    return zip(this.positions, this.signalStrength).map(
+      ([p, s]): VcHeatMapData => ({
+        x: (p!.longitude / Math.PI) * 1000,
+        y: (p!.latitude / Math.PI) * 1000,
+        value: s!,
+      })
+    );
   }
 }

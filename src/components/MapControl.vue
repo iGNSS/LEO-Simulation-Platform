@@ -106,7 +106,7 @@ import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-contr
 import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import { registerEvent } from "./interact";
-import { gird } from "@/simulation/gird";
+import { Grid } from "@/simulation/grid";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;

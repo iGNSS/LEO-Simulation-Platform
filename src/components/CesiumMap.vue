@@ -18,6 +18,7 @@
       @cesium-ready="onCesiumReady"
       @ready="onViewerReady"
     >
+      <heatmap ref="heatmap" />
       <vc-layer-imagery>
         <!-- https://services.arcgisonline.com/arcgis/rest/services -->
         <!-- https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer -->
@@ -33,6 +34,7 @@
 import { VcConfigProvider, VcImageryProviderArcgis, VcLayerImagery, VcViewer } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import MapControl from "./MapControl.vue";
+import Heatmap from "./Heatmap.vue";
 
 const initialized = ref(false);
 
@@ -41,6 +43,7 @@ const vcConfig = reactive({
 });
 
 const provider = ref(null);
+const heatmap = ref(null);
 
 const onCesiumReady = (e: any) => {
   console.log("CesiumReady", e); // 这里e为cesium
@@ -64,6 +67,8 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
   viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.postUpdate.addEventListener(icrf);
 };
+
+provide("heatmap", heatmap.value);
 </script>
 
 <style lang="scss">
