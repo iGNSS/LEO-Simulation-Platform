@@ -49,8 +49,8 @@
           <p>轨道卫星个数：{{ curInfo.satelliteNum }}</p>
           <p>轨道数：{{ curInfo.laneNum }}</p>
           <p>用户个数：{{ curInfo.userNum }}</p>
-          <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
-          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p>
+          <!-- <p>视角高：{{ (curInfo.height / 1000).toFixed(2) }} km</p>
+          <p>视角位置：({{ curInfo.longitude.toFixed(1) }}°, {{ curInfo.latitude.toFixed(1) }}°)</p> -->
           <p>开启波束个数：{{ curInfo.openNum }}</p>
           <p>被覆盖用户个数：{{ curInfo.coveredNum }}</p>
         </q-card-section>
@@ -107,6 +107,7 @@ import { registerEvent } from "./interact";
 import modelUrl from "@/assets/gltf-models/weixin_fixed.gltf?url";
 import imageUrl from "@/assets/img/终端.png?url";
 import { Dataset } from "@/simulation/dataset";
+import { gird } from "@/simulation/gird";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
