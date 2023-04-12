@@ -11,3 +11,8 @@ export function longitudeDifference(left: Cesium.Cartographic, right: Cesium.Car
 export function deg2Coord(radians: number): number {
   return (radians / 180) * 1000;
 }
+
+export function roundTo(x: number, n: number): number {
+  const k = Math.pow(10, n);
+  return Math.round(x * k) / k;
+}

@@ -79,8 +79,8 @@ export class Simulator {
   }
 
   updateSignalStrength(position: Cesium.Cartographic): number {
-    var signalStrength = 0;
-    var angles = [];
+    let signalStrength = 0;
+    const angles = [];
     for (const sat of this.satellites) {
       const positionU = Cesium.Cartesian3.fromRadians(
         position.longitude,
@@ -97,12 +97,12 @@ export class Simulator {
       angles.push(angleBU);
 
       const distance = Cesium.Cartesian3.distance(positionS, positionU);
-      
-      if(distance < 2400000 && (angleBU < (2 * BW))){
-        signalStrength += Math.cos(2*angleBU);
+
+      if (distance < 2400000 && angleBU < 2 * BW) {
+        signalStrength += Math.cos(2 * angleBU);
       }
     }
-
+    // console.log("strength", signalStrength);
     return signalStrength;
   }
 }

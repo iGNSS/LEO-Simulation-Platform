@@ -6,15 +6,39 @@
           <div class="text-h6">视角调整</div>
         </q-card-section>
         <q-card-section>
-          <q-input v-model.number="controls.height" type="number" dark style="max-width: 10em" label="视角高度" suffix="km"
-            @focus="controls.heightFocused = true" @blur="controls.heightFocused = false"
-            @update:model-value="onCameraPositionChanged" />
-          <q-input v-model.number="controls.longitude" type="number" dark style="max-width: 10em" label="视角经度" suffix="°"
-            @focus="controls.longitudeFocused = true" @blur="controls.longitudeFocused = false"
-            @update:model-value="onCameraPositionChanged" />
-          <q-input v-model.number="controls.latitude" type="number" dark style="max-width: 10em" label="视角纬度" suffix="°"
-            @focus="controls.latitudeFocused = true" @blur="controls.latitudeFocused = false"
-            @update:model-value="onCameraPositionChanged" />
+          <q-input
+            v-model.number="controls.height"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角高度"
+            suffix="km"
+            @focus="controls.heightFocused = true"
+            @blur="controls.heightFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.longitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角经度"
+            suffix="°"
+            @focus="controls.longitudeFocused = true"
+            @blur="controls.longitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.latitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角纬度"
+            suffix="°"
+            @focus="controls.latitudeFocused = true"
+            @blur="controls.latitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
         </q-card-section>
       </q-card>
       <q-card dark class="info-card">
@@ -46,8 +70,18 @@
               <q-icon color="deep-orange" name="brightness_medium" />
             </q-item-section>
             <q-item-section>
-              <q-slider dark v-model="controls.beamDisplay" color="deep-orange" markers snap class="beam-slider"
-                :marker-labels="v => BeamDisplayLevel[v].toString()" :min="0" :max="2" @change="onBeamDisplayChanged" />
+              <q-slider
+                dark
+                v-model="controls.beamDisplay"
+                color="deep-orange"
+                markers
+                snap
+                class="beam-slider"
+                :marker-labels="v => BeamDisplayLevel[v].toString()"
+                :min="0"
+                :max="2"
+                @change="onBeamDisplayChanged"
+              />
             </q-item-section>
           </q-item>
         </q-card-section>
@@ -55,7 +89,14 @@
     </div>
     <div class="right">
       <q-card dark bordered>
-        <q-file dark filled v-model="controls.file" label="卫星数据文件" accept=".czml" @update:model-value="onFileUpload">
+        <q-file
+          dark
+          filled
+          v-model="controls.file"
+          label="卫星数据文件"
+          accept=".czml"
+          @update:model-value="onFileUpload"
+        >
           <template v-slot:prepend>
             <q-icon name="cloud_upload" />
           </template>
@@ -76,7 +117,11 @@
             </p>
           </div>
           <div class="row justify-between">
-            <q-btn square :icon="timeOptions.playing ? 'pause' : 'play_arrow'" @click="timeFn.pause" />
+            <q-btn
+              square
+              :icon="timeOptions.playing ? 'pause' : 'play_arrow'"
+              @click="timeFn.pause"
+            />
             <q-btn square icon="multiple_stop" @click="timeFn.reverse" />
             <q-btn square icon="remove" @click="timeFn.speedDown" />
             <q-btn square icon="add" @click="timeFn.speedUp" />
@@ -94,6 +139,7 @@ import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import { registerEvent } from "./interact";
 import { Grid } from "@/simulation/grid";
+import { roundTo } from "@/utils/cesium-math";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
@@ -103,7 +149,7 @@ console.log("useQuasar", $q);
 
 const heatmap = (inject("heatmap") as any).value;
 console.log("heatmap", heatmap.heatmap);
-const grid = new Grid(Cesium.Rectangle.fromDegrees(115, 25, 120, 30), 1); // 考虑用grid来控制heatmap
+const grid = new Grid(Cesium.Rectangle.fromDegrees(60, -30, 120, 60), 1); // 考虑用grid来控制heatmap
 console.log(grid);
 
 const initialized = ref(false);
@@ -159,7 +205,7 @@ let ctrl: SimulatorControl = new SimulatorControl(viewer, {
   circleColor: Cesium.Color.WHITE,
   terminalImageUrl: "/img/终端.png",
 });
-
+let tickCount = 0;
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   console.log("Init!");
   // 然后要注册事件
@@ -167,25 +213,18 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   viewer.clock.shouldAnimate = true;
   // 注册监听事件，在postRenderListener回调函数中添加
   viewer.clock.onTick.addEventListener(() => {
+    tickCount++;
+
     timeOptions.now = viewer.clock.currentTime.toString().replace(/[TZ]|(\.\d+)/g, " ");
 
     const position = viewer.camera.positionCartographic;
-    if (!controls.longitudeFocused) controls.longitude = Cesium.Math.toDegrees(position.longitude).toFixed(2);
-    if (!controls.latitudeFocused) controls.latitude = Cesium.Math.toDegrees(position.latitude).toFixed(2);
-    if (!controls.heightFocused) controls.height = (position.height / 1000).toFixed(2);
+    if (!controls.longitudeFocused)
+      controls.longitude = roundTo(Cesium.Math.toDegrees(position.longitude), 3);
+    if (!controls.latitudeFocused)
+      controls.latitude = roundTo(Cesium.Math.toDegrees(position.latitude), 3);
+    if (!controls.heightFocused) controls.height = roundTo(position.height / 1000, 2);
 
     if (!ctrl.valid) return;
-
-    //计算波束强度
-    // var ss = [];
-    // for (const p of grid.positions) {
-    //   ss.push(ctrl.sim.updateSignalStrength(p));
-    // }
-    //console.log(ss);
-    //grid.updateData(ss);
-    //viewer.camera.setView({
-    //        destination: grid.scope });
-    //heatmap.setData(0, 0.5, grid.heatmapData);
 
     ctrl.sim.update(viewer.clock.currentTime);
     ctrl.sim.closeBeam();
@@ -194,14 +233,20 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
 
-    // heatmap.setData(0, 100, grid.heatmapData);
+    //计算波束强度
+    if (tickCount % 10 == 0) {
+      const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
+      // console.log(ss);
+      grid.updateData(ss);
+      heatmap.setData(0, 1, grid.heatmapData);
+    }
   });
 
   heatmap.setRect(grid.scope, grid.dlat);
 
   console.log(heatmap.heatmap.options.container);
 
-  heatmap.setData(0, 100, grid.heatmapData);
+  heatmap.setData(0, 1, grid.heatmapData);
   console.log(grid.heatmapData);
   initialized.value = true;
 });

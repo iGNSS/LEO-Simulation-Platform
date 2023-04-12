@@ -7,7 +7,7 @@ import { Simulatable } from "./simulatable";
 /**
  * 波束仰角
  */
-var El = [
+const El = [
   11, 29.1, 29.1, 22, 47.95, 44, 47.95, 39.66, 39.66, 61.91, 61.25, 61.25, 66.91, 58.21, 55.0,
   58.21,
 ].map(toRadians);
@@ -20,7 +20,7 @@ const Az = [
   -90,
 ].map(toRadians);
 
-for (var i = 0; i < El.length; i++) {
+for (let i = 0; i < El.length; i++) {
   El[i] *= 1.05;
 }
 
