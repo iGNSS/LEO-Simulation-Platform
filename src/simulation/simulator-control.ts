@@ -22,7 +22,7 @@ export class SimulatorControl {
   private readonly billboards: Cesium.BillboardCollection;
 
   private dataset: Dataset | undefined = undefined;
-  public dataSource: Cesium.DataSource | null = null;
+  public dataSource: Cesium.DataSource | undefined = undefined;
   public valid: boolean = false;
 
   public get ellipsoid(): Cesium.Ellipsoid {
@@ -78,7 +78,9 @@ export class SimulatorControl {
     this.sim.clear();
     this.viewer.entities.removeAll();
     this.billboards.removeAll();
-    // TODO: clear dataSource
+    this.viewer.dataSources.removeAll(true);
+    this.dataSource = undefined;
+    this.dataset = undefined;
     this.valid = false;
   }
 

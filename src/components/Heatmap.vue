@@ -22,11 +22,11 @@ import {
 } from "vue-cesium/es/utils/types";
 import { deg2Coord } from "@/utils/cesium-math";
 
-const heatmap = ref(null);
+const heatmap = shallowRef(null);
 
 const props = reactive({
   ready: false,
-  show: true,
+  show: false,
   max: 100,
   min: 0,
   rectangle: <VcRectangle>[0, 0, 1, 1],
@@ -53,7 +53,7 @@ const options: HeatmapConfiguration = reactive({
  // container: heatDoc
 });
 
-let data = ref<VcHeatMapData[]>([]);
+let data = shallowRef<VcHeatMapData[]>([]);
 
 let rectToSet: { scope: Cesium.Rectangle; dlat: number } | undefined = undefined;
 
@@ -77,6 +77,7 @@ function setData(min: number, max: number, data_: VcHeatMapData[]) {
   props.min = min;
   props.max = max;
   data.value = data_;
+  console.log("data", data);
 }
 
 const onHeatmapReady = ({ Cesium, viewer, cesiumObject }: VcReadyObject) => {

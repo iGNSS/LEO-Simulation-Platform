@@ -194,14 +194,7 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
 
-  });
-
-  viewer.scene.camera.setView({
-    destination: Cesium.Cartesian3.fromDegrees(
-      120,
-      20,
-      10000 * 1000
-    ),
+    // heatmap.setData(0, 100, grid.heatmapData);
   });
 
   heatmap.setRect(grid.scope, grid.dlat);
@@ -225,6 +218,7 @@ const loadAndRun = async (czmlStr: string) => {
   });
   await ctrl.load(await dataset.load());
   $q.notify({ type: "info", message: "加载完成！" });
+  viewer.scene.requestRender();
 };
 
 const onCameraPositionChanged = () => {
@@ -238,6 +232,7 @@ const onCameraPositionChanged = () => {
 };
 
 const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
+  console.log("changed", ctrl, val);
   if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
 };
 
@@ -268,6 +263,9 @@ const onFileUpload = async (file: File | null) => {
 
   .right {
     float: right;
+    position: absolute;
+    bottom: 0;
+    right: 0;
   }
 
   .q-card__section--vert {
