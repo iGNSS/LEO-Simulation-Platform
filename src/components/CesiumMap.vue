@@ -9,12 +9,13 @@
       :animation="true"
       :timeline="true"
       :fullscreen-button="false"
-      :scene3-d-only="true"
+      :scene3-d-only="false"
       :should-animate="false"
       :info-box="true"
       :scene-mode="3"
-      :request-render-mode="false"
+      :request-render-mode="true"
       :selection-indicator="true"
+      :maximum-render-time-change="Infinity"
       @cesium-ready="onCesiumReady"
       @ready="onViewerReady"
     >
@@ -43,7 +44,7 @@ const vcConfig = reactive({
 });
 
 const provider = ref(null);
-const heatmap = ref(null);
+const heatmap = shallowRef(null);
 
 const onCesiumReady = (e: any) => {
   console.log("CesiumReady", e); // 这里e为cesium
@@ -63,7 +64,8 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
       camera.lookAtTransform(transform, offset);
     }
   }
-
+  viewer.scene.requestRenderMode = true;
+  viewer.scene.debugShowFramesPerSecond = true;
   viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.postUpdate.addEventListener(icrf);
 };

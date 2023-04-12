@@ -228,7 +228,7 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
 
-    heatmap.setData(0, 100, grid.heatmapData);
+    // heatmap.setData(0, 100, grid.heatmapData);
   });
 
   heatmap.setRect(grid.scope, 200);
@@ -248,6 +248,7 @@ const loadAndRun = async (czmlStr: string) => {
   });
   await ctrl.load(await dataset.load());
   $q.notify({ type: "info", message: "加载完成！" });
+  viewer.scene.requestRender();
 };
 
 const onCameraPositionChanged = () => {
@@ -261,6 +262,7 @@ const onCameraPositionChanged = () => {
 };
 
 const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
+  console.log("changed", ctrl, val);
   if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
 };
 
@@ -288,6 +290,9 @@ const onFileUpload = async (file: File | null) => {
   }
   .right {
     float: right;
+    position: absolute;
+    bottom: 0;
+    right: 0;
   }
   .q-card__section--vert {
     padding: 8px;
