@@ -26,14 +26,14 @@ const heatmap = shallowRef(null);
 
 const props = reactive({
   ready: false,
-  show: true,
+  show: false,
   max: 1,
   min: 0,
   rectangle: <VcRectangle>[0, 0, 1, 1],
 });
 
 const options: HeatmapConfiguration = reactive({
-  backgroundColor: "rgba(0,0,0,0)",
+  backgroundColor: "rgb(0,0,255)",
   opacity: 0.2,
   radius: 5,
   maxOpacity: 0.5,
@@ -44,7 +44,7 @@ const options: HeatmapConfiguration = reactive({
     0.7: "orange",
     0.5: "yellow",
     0.3: "blue",
-    0.0: "green",
+    0.1: "green",
   },
 });
 
