@@ -57,7 +57,7 @@ function setRect(scope: Cesium.Rectangle, dlat: number) {
     rectToSet = { scope, dlat };
     return;
   }
-  console.log("setRect",scope, deg2Coord(dlat));
+  console.log("setRect", scope, deg2Coord(dlat));
   options.radius = 25 / (scope.north - scope.south);
   props.rectangle = scope;
 }

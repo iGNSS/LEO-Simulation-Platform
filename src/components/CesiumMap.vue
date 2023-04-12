@@ -53,7 +53,7 @@ const onCesiumReady = (e: any) => {
 const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
   console.log("Viewer Ready", Cesium);
   var globeImageryLayer = viewer.scene.imageryLayers.get(0);
- globeImageryLayer.alpha = 0.1;
+  globeImageryLayer.alpha = 0.1;
   initialized.value = true;
   function icrf(scene: Cesium.Scene, time: Cesium.JulianDate) {
     if (scene.mode !== Cesium.SceneMode.SCENE3D) return;

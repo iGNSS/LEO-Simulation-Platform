@@ -6,15 +6,39 @@
           <div class="text-h6">视角调整</div>
         </q-card-section>
         <q-card-section>
-          <q-input v-model.number="controls.height" type="number" dark style="max-width: 10em" label="视角高度" suffix="km"
-            @focus="controls.heightFocused = true" @blur="controls.heightFocused = false"
-            @update:model-value="onCameraPositionChanged" />
-          <q-input v-model.number="controls.longitude" type="number" dark style="max-width: 10em" label="视角经度" suffix="°"
-            @focus="controls.longitudeFocused = true" @blur="controls.longitudeFocused = false"
-            @update:model-value="onCameraPositionChanged" />
-          <q-input v-model.number="controls.latitude" type="number" dark style="max-width: 10em" label="视角纬度" suffix="°"
-            @focus="controls.latitudeFocused = true" @blur="controls.latitudeFocused = false"
-            @update:model-value="onCameraPositionChanged" />
+          <q-input
+            v-model.number="controls.height"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角高度"
+            suffix="km"
+            @focus="controls.heightFocused = true"
+            @blur="controls.heightFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.longitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角经度"
+            suffix="°"
+            @focus="controls.longitudeFocused = true"
+            @blur="controls.longitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
+          <q-input
+            v-model.number="controls.latitude"
+            type="number"
+            dark
+            style="max-width: 10em"
+            label="视角纬度"
+            suffix="°"
+            @focus="controls.latitudeFocused = true"
+            @blur="controls.latitudeFocused = false"
+            @update:model-value="onCameraPositionChanged"
+          />
         </q-card-section>
       </q-card>
       <q-card dark class="info-card">
@@ -46,8 +70,18 @@
               <q-icon color="deep-orange" name="brightness_medium" />
             </q-item-section>
             <q-item-section>
-              <q-slider dark v-model="controls.beamDisplay" color="deep-orange" markers snap class="beam-slider"
-                :marker-labels="v => BeamDisplayLevel[v].toString()" :min="0" :max="2" @change="onBeamDisplayChanged" />
+              <q-slider
+                dark
+                v-model="controls.beamDisplay"
+                color="deep-orange"
+                markers
+                snap
+                class="beam-slider"
+                :marker-labels="v => BeamDisplayLevel[v].toString()"
+                :min="0"
+                :max="2"
+                @change="onBeamDisplayChanged"
+              />
             </q-item-section>
           </q-item>
         </q-card-section>
@@ -71,7 +105,11 @@
             </p>
           </div>
           <div class="row justify-between">
-            <q-btn square :icon="timeOptions.playing ? 'pause' : 'play_arrow'" @click="timeFn.pause" />
+            <q-btn
+              square
+              :icon="timeOptions.playing ? 'pause' : 'play_arrow'"
+              @click="timeFn.pause"
+            />
             <q-btn square icon="multiple_stop" @click="timeFn.reverse" />
             <q-btn square icon="remove" @click="timeFn.speedDown" />
             <q-btn square icon="add" @click="timeFn.speedUp" />
@@ -80,14 +118,29 @@
       </q-card>
     </div>
     <div class="file">
-      <q-file dark filled v-model="controls.file" label="卫星数据文件" accept=".czml" @update:model-value="onFileUpload">
+      <q-file
+        dark
+        filled
+        v-model="controls.file"
+        label="卫星数据文件"
+        accept=".czml"
+        @update:model-value="onFileUpload"
+      >
         <template v-slot:prepend>
           <q-icon name="cloud_upload" />
         </template>
       </q-file>
     </div>
     <div class="toggle">
-      <q-toggle v-model="controls.showHeatmap" color="white" label="显示信号强度" class="white-label" keep-color />
+      <q-toggle
+        v-model="controls.showHeatmap"
+        dark
+        keep-color
+        color="white"
+        label="显示信号强度"
+        class="white-label"
+        @update:model-value="onToggleHeatmap"
+      />
     </div>
   </div>
 </template>
@@ -192,18 +245,6 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
       ctrl.showBeams(controls.beamDisplay);
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
-
-    //console.log(controls.showHeatmap);
-
-    //计算波束强度
-    if (controls.showHeatmap) {
-      timeOptions.playing = false;
-      heatmap.props.show = true;
-      const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
-      console.log(ss);
-      heatmap.setData(0, 1, grid.heatmapData);
-    }
-
   });
 
   heatmap.setRect(grid.scope, grid.dlat);
@@ -243,6 +284,16 @@ const onCameraPositionChanged = () => {
 const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
   console.log("changed", ctrl, val);
   if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
+};
+
+const onToggleHeatmap = (val: boolean) => {
+  if (val) {
+    const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
+    grid.updateData(ss);
+    heatmap.setData(0, 1, grid.heatmapData);
+  }
+  viewer.clock.shouldAnimate = timeOptions.playing = !val;
+  heatmap.props.show = val;
 };
 
 const onFileUpload = async (file: File | null) => {
@@ -311,10 +362,6 @@ const onFileUpload = async (file: File | null) => {
   top: 100px;
   float: right;
   width: 20%;
-}
-
-.file {
-  float: right;
 }
 
 .white-label {
