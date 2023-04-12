@@ -7,3 +7,7 @@ export function difference(left: Cesium.Cartesian3, right: Cesium.Cartesian3): C
 export function longitudeDifference(left: Cesium.Cartographic, right: Cesium.Cartographic): number {
   return Cesium.Math.toDegrees(left.longitude) - Cesium.Math.toDegrees(right.longitude);
 }
+
+export function deg2Coord(radians: number): number {
+  return (radians / 180) * 1000;
+}

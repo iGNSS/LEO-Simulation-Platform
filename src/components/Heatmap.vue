@@ -1,7 +1,7 @@
 <template>
   <vc-overlay-heatmap
-    v-if="data.length"
     ref="heatmap"
+    :show="props.show"
     :data="data"
     :rectangle="props.rectangle"
     :max="props.max"
@@ -20,17 +20,22 @@ import {
   VcReadyObject,
   VcRectangle,
 } from "vue-cesium/es/utils/types";
+import { deg2Coord } from "@/utils/cesium-math";
 
 const heatmap = ref(null);
 
 const props = reactive({
-  max: 0,
+  ready: false,
+  show: true,
+  max: 100,
   min: 0,
-  rectangle: <VcRectangle>{},
+  rectangle: <VcRectangle>[0, 0, 1, 1],
 });
 
 const options: HeatmapConfiguration = reactive({
-  radius: 0,
+  backgroundColor: "rgba(0,0,0,0)",
+  opacity: 0.2,
+  radius: 1000,
   maxOpacity: 0.5,
   minOpacity: 0,
   blur: 0.75,
@@ -45,10 +50,18 @@ const options: HeatmapConfiguration = reactive({
 
 let data = ref<VcHeatMapData[]>([]);
 
-function setScope(scope: Cesium.Rectangle, radius: int) {
-  options.radius = radius;
+let rectToSet: { scope: Cesium.Rectangle; dlat: number } | undefined = undefined;
+
+function setRect(scope: Cesium.Rectangle, dlat: number) {
+  if (!props.ready) {
+    rectToSet = { scope, dlat };
+    return;
+  }
+  console.log("setRect", deg2Coord(dlat));
+  options.radius = deg2Coord(dlat);
   const width = ((scope.east - scope.west) / Cesium.Math.PI) * 1000;
   const height = ((scope.north - scope.south) / Cesium.Math.PI) * 1000;
+  props.rectangle = scope;
 }
 
 function setData(min: number, max: number, data_: VcHeatMapData[]) {
@@ -57,9 +70,16 @@ function setData(min: number, max: number, data_: VcHeatMapData[]) {
   data.value = data_;
 }
 
-const onHeatmapReady = ({ Cesium, viewer, cesiumObject }: VcReadyObject) => {};
+const onHeatmapReady = ({ Cesium, viewer, cesiumObject }: VcReadyObject) => {
+  console.log("Heatmap Ready");
+  props.ready = true;
+  if (rectToSet) {
+    setRect(rectToSet.scope, rectToSet.dlat);
+    rectToSet = undefined;
+  }
+};
 
-defineExpose({ setScope, setData });
+defineExpose({ heatmap, props, setRect, setData });
 </script>
 
 <style lang="scss"></style>

@@ -147,7 +147,9 @@ const $q = useQuasar();
 console.log("useQuasar", $q);
 
 const heatmap = (inject("heatmap") as any).value;
-console.log("heatmap", heatmap.setData, heatmap.setScope);
+console.log("heatmap", heatmap.heatmap);
+const grid = new Grid(Cesium.Rectangle.fromDegrees(0, 0, 50, 50), 200); // 考虑用grid来控制heatmap
+console.log(grid);
 
 const initialized = ref(false);
 
@@ -160,6 +162,7 @@ const controls = reactive({
   latitudeFocused: false,
   beamDisplay: BeamDisplayLevel.None,
   file: null,
+  showHeatmap: true,
 });
 
 const timeOptions = reactive({
@@ -224,7 +227,12 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
       ctrl.showBeams(controls.beamDisplay);
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
+
+    heatmap.setData(0, 100, grid.heatmapData);
   });
+
+  heatmap.setRect(grid.scope, 200);
+  heatmap.setData(0, 100, grid.heatmapData);
   initialized.value = true;
 });
 
