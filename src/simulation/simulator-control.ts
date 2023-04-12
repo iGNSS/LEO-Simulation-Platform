@@ -22,7 +22,6 @@ export class SimulatorControl {
   public valid: boolean = false;
 
   private readonly billboards: Cesium.BillboardCollection;
-  private readonly satellitePrimitives: Cesium.PrimitiveCollection;
   private readonly beamPrimitives: Cesium.PrimitiveCollection;
 
   public get scene(): Cesium.Scene {
@@ -38,7 +37,6 @@ export class SimulatorControl {
     this.viewer = viewer;
     this.factory = new DisplayFactory(config);
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
-    this.satellitePrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection());
     this.beamPrimitives = viewer.scene.primitives.add(
       new Cesium.PrimitiveCollection({ show: false })
     );
@@ -58,13 +56,9 @@ export class SimulatorControl {
     for (const entity of dataSource.entities.values) {
       const satellite = new Satellite(entity, this);
       this.sim.satellites.push(satellite);
-      this.satellitePrimitives.add(satellite.primitive);
       this.beamPrimitives.add(satellite.rangePrimitive);
       this.beamPrimitives.add(satellite.beamPrimitives);
     }
-    dataSource.entities.removeAll(); // 会导致轨道没了
-    console.log(this.satellitePrimitives);
-    // this.viewer.dataSources.remove(dataSource);
   }
 
   public addUsers(): void {
@@ -93,7 +87,6 @@ export class SimulatorControl {
     this.sim.clear();
     this.viewer.entities.removeAll();
     this.billboards.removeAll();
-    this.satellitePrimitives.removeAll();
     this.beamPrimitives.removeAll();
     this.viewer.dataSources.removeAll(true);
     this.dataSource = undefined;

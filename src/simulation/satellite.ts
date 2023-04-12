@@ -6,7 +6,7 @@ import { groundMatrix } from "@/utils/cesium-math";
 export class Satellite extends Simulatable {
   private static readonly beamNum: int = 48;
 
-  public readonly primitive: Cesium.Model;
+  public readonly entity: Cesium.Entity;
   public readonly beams: Beam[] = [];
   private readonly position: Cesium.PositionProperty;
   public readonly rangePrimitive: Cesium.Primitive;
@@ -19,21 +19,10 @@ export class Satellite extends Simulatable {
     super(ctrl);
     this.position = entity.position!;
     entity.name = "satellite";
-    this.primitive = this.createPrimitive(entity);
+    this.entity = entity;
     this.beamPrimitives = new Cesium.PrimitiveCollection({ show: false });
     this.rangePrimitive = this.createCircle();
     this.beams = this.createBeams(entity);
-  }
-
-  private createPrimitive(entity: Cesium.Entity) {
-    const primitive = Cesium.Model.fromGltf({
-      url: this.ctrl.config.satelliteModelUrl,
-      scale: 10.0,
-      minimumPixelSize: 32,
-      // maximumScale: 4,
-      id: entity.id,
-    });
-    return primitive;
   }
 
   //创建圆面
@@ -58,7 +47,6 @@ export class Satellite extends Simulatable {
   public update(time: Cesium.JulianDate): void {
     this.currentPosition = this.position.getValue(time)!;
     this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
-    this.primitive.modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(this.currentPosition);
     this.beams.forEach(b => b.update(time));
   }
 
