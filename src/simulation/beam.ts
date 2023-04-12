@@ -10,7 +10,9 @@ import { Simulatable } from "./simulatable";
 const El = [
   11, 29.1, 29.1, 22, 47.95, 44, 47.95, 39.66, 39.66, 61.91, 61.25, 61.25, 66.91, 58.21, 55.0,
   58.21,
-].map(toRadians);
+]
+  .map(toRadians)
+  .map(x => x * 1.05);
 
 /**
  * 波束方位角
@@ -19,10 +21,6 @@ const Az = [
   120, 100.89, 139.11, -180, 96.59, 120, 143.41, 166.1, -42.62, 80, 15.94, -15.94, -80, -90, -90,
   -90,
 ].map(toRadians);
-
-for (let i = 0; i < El.length; i++) {
-  El[i] *= 1.05;
-}
 
 for (let j = 16; j < 48; j++) {
   El[j] = El[j - 16];
@@ -35,54 +33,79 @@ const R_e = 6371000;
  * The status of beam.
  */
 export enum BeamStatus {
+  Closed,
   Standby,
   Open,
-  Closed,
+}
+
+class BeamMaterial {
+  public static M: {
+    0: Cesium.Material;
+    1: Cesium.Material;
+    2: Cesium.Material;
+  };
+  public static __init__() {
+    if (BeamMaterial.M) return;
+    const M = {
+      [BeamStatus.Closed]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.WHITE.withAlpha(0.3),
+      }),
+      [BeamStatus.Standby]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.GREEN.withAlpha(0.3),
+      }),
+      [BeamStatus.Open]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.RED.withAlpha(0.3),
+      }),
+    };
+    BeamMaterial.M = M;
+  }
 }
 
 export class Beam extends Simulatable {
   public static readonly pointNum: int = 292;
 
   public readonly satellite: Satellite;
-  public readonly entity: Cesium.Entity; // WaveEntity
-
+  // public readonly entity: Cesium.Entity; // WaveEntity
+  public readonly instance: Cesium.GeometryInstance;
+  public readonly primitive: Cesium.Primitive;
   public readonly index: int;
 
   /** Whether the beam is covering any user */
   public cover: boolean[] = [];
   /** Working status of the beam. */
   public status: BeamStatus = BeamStatus.Closed;
+  private _lastStatus: BeamStatus | undefined;
 
+  public position: Cesium.PositionProperty | undefined = undefined;
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
 
   constructor(satellite: Satellite, index: int, parent: Cesium.Entity, ctrl: SimulatorControl) {
     super(ctrl);
+    BeamMaterial.__init__();
     this.satellite = satellite;
     this.index = index;
-    this.entity = this.createBeamEntity(parent);
+    this.instance = this.createBeamInstance(parent);
+    this.primitive = new Cesium.Primitive({
+      geometryInstances: this.instance,
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        material: BeamMaterial.M[BeamStatus.Closed],
+      }),
+    });
     this.cover = Array(this.sim.users.length).fill(false);
   }
 
   //创建波束
-  private createBeamEntity(parent: Cesium.Entity) {
-    const waveEntity = this.ctrl.viewer.entities.add({
-      id: `${parent.id} beam ${this.index}`,
-      ellipse: {
-        semiMajorAxis: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
-        semiMinorAxis: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        outline: true,
-        fill: true,
-        numberOfVerticalLines: 0,
-        material: this.ctrl.config.circleColor.withAlpha(0.5),
-        outlineColor: this.ctrl.config.circleColor.withAlpha(0.5),
-        outlineWidth: 100,
-      },
+  private createBeamInstance(parent: Cesium.Entity) {
+    const instance = new Cesium.GeometryInstance({
+      geometry: new Cesium.CircleGeometry({
+        center: Cesium.Cartesian3.fromDegrees(0, 0),
+        granularity: 0.05,
+        radius: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
+      }),
     });
-    waveEntity.show = false;
-    waveEntity.position = this.initSatellitePosition(parent, El[this.index], Az[this.index]);
-    return waveEntity;
+    this.position = this.initSatellitePosition(parent, El[this.index], Az[this.index]);
+    return instance;
   }
 
   //星下点坐标
@@ -136,7 +159,7 @@ export class Beam extends Simulatable {
   }
 
   public update(time: Cesium.JulianDate) {
-    this.currentPosition = this.entity.position!.getValue(time)!;
+    this.currentPosition = this.position!.getValue(time)!;
     this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
     for (let k = 0; k < this.sim.users.length; k++) {
       const user = this.sim.users[k];
@@ -174,21 +197,21 @@ export class Beam extends Simulatable {
   }
 
   public updateDisplay(covered: boolean): void {
-    this.entity.show = covered;
-    if (!covered) {
-      return;
+    this.primitive.show = covered;
+    if (covered) {
+      this.primitive.modelMatrix = Cesium.Matrix4.fromRotation(
+        Cesium.Matrix3.fromHeadingPitchRoll(
+          new Cesium.HeadingPitchRoll(
+            -this.currentPositionCarto.longitude,
+            this.currentPositionCarto.latitude,
+            0
+          )
+        )
+      );
+      if (this._lastStatus != this.status) {
+        this.primitive.appearance.material = BeamMaterial.M[this.status];
+      }
     }
-    const ellipse = this.entity.ellipse!;
-    switch (this.status) {
-      case BeamStatus.Open:
-        ellipse.material = Cesium.Color.RED.withAlpha(0.5);
-        break;
-      case BeamStatus.Standby:
-        ellipse.material = Cesium.Color.GREEN.withAlpha(0.5);
-        break;
-      case BeamStatus.Closed:
-        ellipse.material = Cesium.Color.WHITE.withAlpha(0.5);
-        break;
-    }
+    this._lastStatus = this.status;
   }
 }

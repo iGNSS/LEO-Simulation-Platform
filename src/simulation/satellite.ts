@@ -9,6 +9,7 @@ export class Satellite extends Simulatable {
   public readonly beams: Beam[] = [];
   private readonly position: Cesium.PositionProperty;
   private readonly waveEntity: Cesium.Entity;
+  private readonly beamPrimitives: Cesium.PrimitiveCollection;
 
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
@@ -18,6 +19,7 @@ export class Satellite extends Simulatable {
     this.entity = entity;
     this.position = entity.position!;
     entity.name = "satellite";
+    this.beamPrimitives = new Cesium.PrimitiveCollection({ show: false });
     this.waveEntity = this.createCircle();
     this.beams = this.createBeams();
   }
@@ -68,6 +70,7 @@ export class Satellite extends Simulatable {
     const beams = [];
     for (let j = 0; j < Satellite.beamNum; j++) {
       beams.push(new Beam(this, j, this.entity, this.ctrl));
+      this.beamPrimitives.add(beams.at(-1)?.primitive);
     }
     return beams;
   }
@@ -82,10 +85,12 @@ export class Satellite extends Simulatable {
     this.waveEntity.show = true;
     let covered =
       level === BeamDisplayLevel.All || this.beams.some(b => b.status != BeamStatus.Closed);
+    this.beamPrimitives.show = covered;
     this.beams.forEach(b => b.updateDisplay(covered));
   }
 
   public hideBeams(): void {
     this.waveEntity.show = false;
+    this.beamPrimitives.show = false;
   }
 }

@@ -10,6 +10,7 @@ declare module '@vue/runtime-core' {
     CesiumMap: typeof import('./components/CesiumMap.vue')['default']
     Heatmap: typeof import('./components/Heatmap.vue')['default']
     MapControl: typeof import('./components/MapControl.vue')['default']
+    PrimitiveTest: typeof import('./components/PrimitiveTest.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
