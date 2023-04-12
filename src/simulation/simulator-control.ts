@@ -1,14 +1,9 @@
 import { BeamStatus } from "./beam";
 import { Dataset } from "./dataset";
+import { DisplayConfig, DisplayFactory } from "../utils/display-factory";
 import { Satellite } from "./satellite";
 import { Simulator } from "./simulator";
 import { User } from "./user";
-
-export interface DisplayConfig {
-  circleColor: Cesium.Color;
-  terminalImageUrl: string;
-  satelliteModelUrl: string;
-}
 
 export enum BeamDisplayLevel {
   None,
@@ -20,6 +15,7 @@ export class SimulatorControl {
   public readonly viewer: Cesium.Viewer;
   public readonly sim: Simulator;
   public readonly config: DisplayConfig;
+  public readonly factory: DisplayFactory;
 
   private dataset: Dataset | undefined = undefined;
   public dataSource: Cesium.DataSource | undefined = undefined;
@@ -40,6 +36,7 @@ export class SimulatorControl {
   constructor(viewer: Cesium.Viewer, config: DisplayConfig) {
     this.config = config;
     this.viewer = viewer;
+    this.factory = new DisplayFactory(config);
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
     this.satellitePrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection());
     this.beamPrimitives = viewer.scene.primitives.add(

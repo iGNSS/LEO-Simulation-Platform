@@ -1,0 +1,26 @@
+import { toRadians } from "@/utils/cesium-math";
+
+/**
+ * 波束仰角
+ */
+export const El = [
+  11, 29.1, 29.1, 22, 47.95, 44, 47.95, 39.66, 39.66, 61.91, 61.25, 61.25, 66.91, 58.21, 55.0,
+  58.21,
+]
+  .map(toRadians)
+  .map(x => x * 1.05);
+
+/**
+ * 波束方位角
+ */
+export const Az = [
+  120, 100.89, 139.11, -180, 96.59, 120, 143.41, 166.1, -42.62, 80, 15.94, -15.94, -80, -90, -90,
+  -90,
+].map(toRadians);
+
+for (let j = 16; j < 48; j++) {
+  El[j] = El[j - 16];
+  Az[j] = Az[j - 16] + toRadians(120);
+}
+
+export const BW = toRadians(40); //波束角

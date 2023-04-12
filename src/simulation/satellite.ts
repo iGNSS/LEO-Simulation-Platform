@@ -39,21 +39,8 @@ export class Satellite extends Simulatable {
   //创建圆面
   private createCircle() {
     const primitive = new Cesium.Primitive({
-      geometryInstances: new Cesium.GeometryInstance({
-        geometry: new Cesium.CircleOutlineGeometry({
-          center: Cesium.Cartesian3.fromDegrees(0, 0, 400000),
-          radius: 1800000 * 1.3,
-        }),
-        attributes: {
-          color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.VIOLET),
-        },
-      }),
-      appearance: new Cesium.EllipsoidSurfaceAppearance({
-        material: Cesium.Material.fromType("Color", {
-          color: this.ctrl.config.circleColor.withAlpha(0.2),
-        }),
-      }),
-      // show: false,
+      geometryInstances: this.ctrl.factory.satelliteRangeInstance,
+      appearance: this.ctrl.factory.satelliteRangeAppearance,
     });
     return primitive;
   }
