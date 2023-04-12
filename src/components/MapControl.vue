@@ -217,6 +217,7 @@ const curInfo = reactive({
 let ctrl: SimulatorControl = new SimulatorControl(viewer, {
   circleColor: Cesium.Color.WHITE,
   terminalImageUrl: "/img/终端.png",
+  satelliteModelUrl: "/gltf-models/satellite.gltf",
 });
 let tickCount = 0;
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {

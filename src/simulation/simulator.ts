@@ -1,7 +1,8 @@
 import { Satellite } from "./satellite";
 import { User } from "./user";
-import { Beam, BeamStatus, BW } from "./beam";
+import { Beam, BeamStatus } from "./beam";
 import Lazy from "lazy.js";
+import { BW } from "./beam-constants";
 
 export class Simulator {
   public readonly satellites: Satellite[] = [];

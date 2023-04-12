@@ -1,13 +1,9 @@
 import { BeamStatus } from "./beam";
 import { Dataset } from "./dataset";
+import { DisplayConfig, DisplayFactory } from "../utils/display-factory";
 import { Satellite } from "./satellite";
 import { Simulator } from "./simulator";
 import { User } from "./user";
-
-export interface DisplayConfig {
-  circleColor: Cesium.Color;
-  terminalImageUrl: string;
-}
 
 export enum BeamDisplayLevel {
   None,
@@ -19,6 +15,7 @@ export class SimulatorControl {
   public readonly viewer: Cesium.Viewer;
   public readonly sim: Simulator;
   public readonly config: DisplayConfig;
+  public readonly factory: DisplayFactory;
 
   private dataset: Dataset | undefined = undefined;
   public dataSource: Cesium.DataSource | undefined = undefined;
@@ -38,35 +35,12 @@ export class SimulatorControl {
   constructor(viewer: Cesium.Viewer, config: DisplayConfig) {
     this.config = config;
     this.viewer = viewer;
+    this.factory = new DisplayFactory(config);
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
-    this.beamPrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection({ show: false}));
-    this.sim = new Simulator();
-
-    var center = Cesium.Cartesian3.fromDegrees(0, 0);
-    var radius = 250000.0;
-    var circleInstance = new Cesium.GeometryInstance({
-      geometry: new Cesium.CircleGeometry({
-        center: center,
-        radius: radius,
-        stRotation: Cesium.Math.toRadians(90),
-        vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
-      }),
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.VIOLET),
-      },
-    });
-    circleInstance.modelMatrix = Cesium.Matrix4.fromRotation(Cesium.Matrix3.fromRotationY(0.1));
-    console.log(circleInstance);
-    this.beamPrimitives.add(
-      new Cesium.Primitive({
-        geometryInstances: [circleInstance],
-        appearance: new Cesium.EllipsoidSurfaceAppearance({
-          material: Cesium.Material.fromType("Color", {
-            color: new Cesium.Color(1.0, 1.0, 1.0, 0.3),
-          }),
-        }),
-      })
+    this.beamPrimitives = viewer.scene.primitives.add(
+      new Cesium.PrimitiveCollection({ show: false })
     );
+    this.sim = new Simulator();
   }
 
   public async load(dataset: Dataset): Promise<void> {
@@ -79,13 +53,11 @@ export class SimulatorControl {
 
   private async loadCZML(czml: any): Promise<void> {
     const dataSource = await this.viewer.dataSources.add(Cesium.CzmlDataSource.load(czml));
-    if (dataSource?.entities) {
-      this.dataSource = dataSource;
-      for (const satellite of dataSource.entities.values) {
-        this.sim.satellites.push(new Satellite(satellite, this));
-        this.beamPrimitives.add(this.sim.satellites.at(-1)!.beamPrimitives);
-      }
-      console.log(this.beamPrimitives);
+    for (const entity of dataSource.entities.values) {
+      const satellite = new Satellite(entity, this);
+      this.sim.satellites.push(satellite);
+      this.beamPrimitives.add(satellite.rangePrimitive);
+      this.beamPrimitives.add(satellite.beamPrimitives);
     }
   }
 

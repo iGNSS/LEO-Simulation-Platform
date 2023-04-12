@@ -65,6 +65,7 @@ export class Dataset {
           for (let k = 0; k < copy.position.cartesian.length; k += 4) {
             copy.position.cartesian[k] += 300 * step * j;
           }
+          delete copy.path;
         } else {
           // 修改 线的颜色
           //copy.path.material.solidColor.color.rgba = lineColor
