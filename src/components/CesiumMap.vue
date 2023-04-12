@@ -13,7 +13,7 @@
       :should-animate="false"
       :info-box="true"
       :scene-mode="3"
-      :request-render-mode="true"
+      :request-render-mode="false"
       :selection-indicator="true"
       :maximum-render-time-change="Infinity"
       @cesium-ready="onCesiumReady"
@@ -64,7 +64,7 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
       camera.lookAtTransform(transform, offset);
     }
   }
-  viewer.scene.requestRenderMode = true;
+  // viewer.scene.requestRenderMode = true;
   viewer.scene.debugShowFramesPerSecond = true;
   viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.postUpdate.addEventListener(icrf);

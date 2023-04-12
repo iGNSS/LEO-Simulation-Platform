@@ -40,8 +40,9 @@ export class Beam extends Simulatable {
   public static readonly pointNum: int = 292;
 
   public readonly satellite: Satellite;
-  public readonly entity: Cesium.Entity; // WaveEntity
-
+  // public readonly entity: Cesium.Entity; // WaveEntity
+  public readonly instance: Cesium.GeometryInstance;
+  public readonly primitive: Cesium.Primitive;
   public readonly index: int;
 
   /** Whether the beam is covering any user */
@@ -49,6 +50,7 @@ export class Beam extends Simulatable {
   /** Working status of the beam. */
   public status: BeamStatus = BeamStatus.Closed;
 
+  public position: Cesium.PositionProperty | undefined = undefined;
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
 
@@ -56,29 +58,30 @@ export class Beam extends Simulatable {
     super(ctrl);
     this.satellite = satellite;
     this.index = index;
-    this.entity = this.createBeamEntity(parent);
+    this.instance = this.createBeamEntity(parent);
+    this.primitive = new Cesium.Primitive({
+      geometryInstances: this.instance,
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        material: Cesium.Material.fromType("Color", {
+          color: new Cesium.Color(1.0, 1.0, 1.0, 0.3),
+        }),
+      }),
+    });
     this.cover = Array(this.sim.users.length).fill(false);
   }
 
   //创建波束
   private createBeamEntity(parent: Cesium.Entity) {
-    const waveEntity = this.ctrl.viewer.entities.add({
-      id: `${parent.id} beam ${this.index}`,
-      ellipse: {
-        semiMajorAxis: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
-        semiMinorAxis: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        outline: true,
-        fill: true,
-        numberOfVerticalLines: 0,
-        material: this.ctrl.config.circleColor.withAlpha(0.5),
-        outlineColor: this.ctrl.config.circleColor.withAlpha(0.5),
-        outlineWidth: 100,
-      },
+    const instance = new Cesium.GeometryInstance({
+      geometry: new Cesium.CircleGeometry({
+        center: Cesium.Cartesian3.fromArray([1, 1, 1]),
+        // height: 0,
+        // granularity: 0.05,
+        radius: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
+      }),
     });
-    waveEntity.show = false;
-    waveEntity.position = this.initSatellitePosition(parent, El[this.index], Az[this.index]);
-    return waveEntity;
+    this.position = this.initSatellitePosition(parent, El[this.index], Az[this.index]);
+    return instance;
   }
 
   //星下点坐标
@@ -132,12 +135,18 @@ export class Beam extends Simulatable {
   }
 
   public update(time: Cesium.JulianDate) {
-    this.currentPosition = this.entity.position!.getValue(time)!;
+    this.currentPosition = this.position!.getValue(time)!;
+    // this.instance.geometry.center = this.currentPosition;
     this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
     for (let k = 0; k < this.sim.users.length; k++) {
       const user = this.sim.users[k];
       this.cover[k] = this.nearUser(user) && this.getValue(user).isCovered;
     }
+    // console.log(this.instance.geometry)
+    // this.instance.geometry.center = this.currentPosition;
+    // console.log(this.currentPosition);
+    this.primitive.modelMatrix = Cesium.Matrix4.fromTranslation(this.currentPosition);
+    console.log(this.instance.modelMatrix, this.primitive.modelMatrix);
   }
 
   private nearUser(user: User): boolean {
@@ -170,11 +179,12 @@ export class Beam extends Simulatable {
   }
 
   public updateDisplay(covered: boolean): void {
-    this.entity.show = covered;
     if (!covered) {
       return;
     }
-    const ellipse = this.entity.ellipse!;
+
+    this.primitive.show = true;
+    /* const ellipse = this.entity.ellipse!;
     switch (this.status) {
       case BeamStatus.Open:
         ellipse.material = Cesium.Color.RED.withAlpha(0.3);
@@ -185,6 +195,6 @@ export class Beam extends Simulatable {
       case BeamStatus.Closed:
         ellipse.material = Cesium.Color.WHITE.withAlpha(0.3);
         break;
-    }
+    } */
   }
 }

@@ -19,21 +19,50 @@ export class SimulatorControl {
   public readonly viewer: Cesium.Viewer;
   public readonly sim: Simulator;
   public readonly config: DisplayConfig;
-  private readonly billboards: Cesium.BillboardCollection;
 
   private dataset: Dataset | undefined = undefined;
   public dataSource: Cesium.DataSource | undefined = undefined;
   public valid: boolean = false;
 
+  private readonly billboards: Cesium.BillboardCollection;
+  private readonly beamPrimitives: Cesium.PrimitiveCollection;
+
+  public get scene(): Cesium.Scene {
+    return this.viewer.scene;
+  }
+
   public get ellipsoid(): Cesium.Ellipsoid {
-    return this.viewer.scene.globe.ellipsoid;
+    return this.scene.globe.ellipsoid;
   }
 
   constructor(viewer: Cesium.Viewer, config: DisplayConfig) {
     this.config = config;
     this.viewer = viewer;
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
+    this.beamPrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection());
     this.sim = new Simulator();
+
+    /* var center = Cesium.Cartesian3.fromDegrees(-72.0, 40.0);
+    var radius = 250000.0;
+    var circleInstance = new Cesium.GeometryInstance({
+      geometry: new Cesium.CircleGeometry({
+        center: center,
+        radius: radius,
+        stRotation: Cesium.Math.toRadians(90),
+        vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+      }),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.VIOLET),
+      },
+    });
+    this.beamPrimitives.add(
+      new Cesium.Primitive({
+        geometryInstances: [circleInstance],
+        appearance: new Cesium.EllipsoidSurfaceAppearance({
+          material: Cesium.Material.fromType("Color", { color: new Cesium.Color(1.0, 1.0, 1.0, 0.3) }),
+        }),
+      })
+    ); */
   }
 
   public async load(dataset: Dataset): Promise<void> {
@@ -50,7 +79,8 @@ export class SimulatorControl {
       this.dataSource = dataSource;
       for (const satellite of dataSource.entities.values) {
         this.sim.satellites.push(new Satellite(satellite, this));
-      }
+        this.beamPrimitives.add(this.sim.satellites.at(-1)!.beamPrimitives);
+      }console.log(this.beamPrimitives);
     }
   }
 
