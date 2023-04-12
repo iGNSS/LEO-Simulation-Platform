@@ -89,18 +89,6 @@
     </div>
     <div class="right">
       <q-card dark bordered>
-        <q-file
-          dark
-          filled
-          v-model="controls.file"
-          label="卫星数据文件"
-          accept=".czml"
-          @update:model-value="onFileUpload"
-        >
-          <template v-slot:prepend>
-            <q-icon name="cloud_upload" />
-          </template>
-        </q-file>
         <q-card-section>
           <div class="text-h6">仿真控制</div>
         </q-card-section>
@@ -129,6 +117,31 @@
         </q-card-section>
       </q-card>
     </div>
+    <div class="file">
+      <q-file
+        dark
+        filled
+        v-model="controls.file"
+        label="卫星数据文件"
+        accept=".czml"
+        @update:model-value="onFileUpload"
+      >
+        <template v-slot:prepend>
+          <q-icon name="cloud_upload" />
+        </template>
+      </q-file>
+    </div>
+    <div class="toggle">
+      <q-toggle
+        v-model="controls.showHeatmap"
+        dark
+        keep-color
+        color="white"
+        label="显示信号强度"
+        class="white-label"
+        @update:model-value="onToggleHeatmap"
+      />
+    </div>
   </div>
 </template>
 
@@ -149,7 +162,7 @@ console.log("useQuasar", $q);
 
 const heatmap = (inject("heatmap") as any).value;
 console.log("heatmap", heatmap.heatmap);
-const grid = new Grid(Cesium.Rectangle.fromDegrees(60, -30, 120, 60), 1); // 考虑用grid来控制heatmap
+const grid = new Grid(Cesium.Rectangle.fromDegrees(60, 0, 120, 60), 1); // 考虑用grid来控制heatmap
 console.log(grid);
 
 const initialized = ref(false);
@@ -163,7 +176,7 @@ const controls = reactive({
   latitudeFocused: false,
   beamDisplay: BeamDisplayLevel.None,
   file: null,
-  showHeatmap: true,
+  showHeatmap: false,
 });
 
 const timeOptions = reactive({
@@ -232,19 +245,11 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
       ctrl.showBeams(controls.beamDisplay);
     }
     Object.assign(curInfo, ctrl.getCurrentInfo());
-
-    //计算波束强度
-    if (tickCount % 10 == 0) {
-      const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
-      // console.log(ss);
-      grid.updateData(ss);
-      heatmap.setData(0, 1, grid.heatmapData);
-    }
   });
 
   heatmap.setRect(grid.scope, grid.dlat);
 
-  console.log(heatmap.heatmap.options.container);
+  console.log("container", heatmap.heatmap.options.container);
 
   heatmap.setData(0, 1, grid.heatmapData);
   console.log(grid.heatmapData);
@@ -281,6 +286,16 @@ const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
   if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
 };
 
+const onToggleHeatmap = (val: boolean) => {
+  if (val) {
+    const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
+    grid.updateData(ss);
+    heatmap.setData(0, 1, grid.heatmapData);
+  }
+  viewer.clock.shouldAnimate = timeOptions.playing = !val;
+  heatmap.props.show = val;
+};
+
 const onFileUpload = async (file: File | null) => {
   if (!file) return;
   await loadAndRun(await file.text());
@@ -307,6 +322,7 @@ const onFileUpload = async (file: File | null) => {
   }
 
   .right {
+    display: none;
     float: right;
     position: absolute;
     bottom: 0;
@@ -346,5 +362,9 @@ const onFileUpload = async (file: File | null) => {
   top: 100px;
   float: right;
   width: 20%;
+}
+
+.white-label {
+  color: #fff;
 }
 </style>
