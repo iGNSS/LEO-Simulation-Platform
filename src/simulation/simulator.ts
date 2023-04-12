@@ -1,6 +1,6 @@
 import { Satellite } from "./satellite";
 import { User } from "./user";
-import { Beam, BeamStatus } from "./beam";
+import { Beam, BeamStatus, BW } from "./beam";
 import Lazy from "lazy.js";
 
 export class Simulator {
@@ -76,5 +76,33 @@ export class Simulator {
         beam.status = BeamStatus.Open;
       }
     }
+  }
+
+  updateSignalStrength(position: Cesium.Cartographic): number {
+    var signalStrength = 0;
+    var angles = [];
+    for (const sat of this.satellites) {
+      const positionU = Cesium.Cartesian3.fromRadians(
+        position.longitude,
+        position.latitude,
+        position.height
+      );
+
+      const positionS = sat.currentPosition;
+
+      const vectorUS = Cesium.Cartesian3.subtract(positionS, positionU, new Cesium.Cartesian3());
+
+      // 波束和用户之间的夹角
+      const angleBU = Cesium.Cartesian3.angleBetween(vectorUS, positionS);
+      angles.push(angleBU);
+
+      const distance = Cesium.Cartesian3.distance(positionS, positionU);
+      
+      if(distance < 2400000 && (angleBU < (2 * BW))){
+        signalStrength += Math.cos(2*angleBU);
+      }
+    }
+
+    return signalStrength;
   }
 }

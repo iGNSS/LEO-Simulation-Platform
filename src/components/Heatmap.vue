@@ -32,6 +32,10 @@ const props = reactive({
   rectangle: <VcRectangle>[0, 0, 1, 1],
 });
 
+var heatDoc = document.createElement("div");
+      heatDoc.style.margin = "0";
+      document.body.appendChild(heatDoc);
+
 const options: HeatmapConfiguration = reactive({
   backgroundColor: "rgba(0,0,0,0)",
   opacity: 0.2,
@@ -41,11 +45,12 @@ const options: HeatmapConfiguration = reactive({
   blur: 0.75,
   gradient: {
     0.9: "red",
-    0.8: "orange",
-    0.7: "yellow",
-    0.5: "blue",
-    0.3: "green",
+    0.7: "orange",
+    0.5: "yellow",
+    0.3: "blue",
+    0.0: "green",
   },
+ // container: heatDoc
 });
 
 let data = ref<VcHeatMapData[]>([]);
@@ -58,9 +63,13 @@ function setRect(scope: Cesium.Rectangle, dlat: number) {
     return;
   }
   console.log("setRect", deg2Coord(dlat));
-  options.radius = deg2Coord(dlat);
-  const width = ((scope.east - scope.west) / Cesium.Math.PI) * 1000;
-  const height = ((scope.north - scope.south) / Cesium.Math.PI) * 1000;
+  options.radius = 300;
+  //const width = ((scope.east - scope.west) / Cesium.Math.PI) * 1000;
+  //const height = ((scope.north - scope.south) / Cesium.Math.PI) * 1000;
+  const width = 1000;
+  const height = 1000;
+  //options.container.style.width = width.toString() + "px";
+  //options.container.style.height = height.toString() + "px";
   props.rectangle = scope;
 }
 

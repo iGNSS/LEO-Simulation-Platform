@@ -7,7 +7,7 @@ import { Simulatable } from "./simulatable";
 /**
  * 波束仰角
  */
-const El = [
+var El = [
   11, 29.1, 29.1, 22, 47.95, 44, 47.95, 39.66, 39.66, 61.91, 61.25, 61.25, 66.91, 58.21, 55.0,
   58.21,
 ].map(toRadians);
@@ -20,11 +20,15 @@ const Az = [
   -90,
 ].map(toRadians);
 
+for (var i = 0; i < El.length; i++) {
+  El[i] *= 1.05;
+}
+
 for (let j = 16; j < 48; j++) {
   El[j] = El[j - 16];
   Az[j] = Az[j - 16] + toRadians(120);
 }
-const BW = toRadians(22); //波束角
+export const BW = toRadians(40); //波束角
 const R_e = 6371000;
 
 /**
@@ -177,13 +181,13 @@ export class Beam extends Simulatable {
     const ellipse = this.entity.ellipse!;
     switch (this.status) {
       case BeamStatus.Open:
-        ellipse.material = Cesium.Color.RED.withAlpha(0.3);
+        ellipse.material = Cesium.Color.RED.withAlpha(0.5);
         break;
       case BeamStatus.Standby:
-        ellipse.material = Cesium.Color.GREEN.withAlpha(0.3);
+        ellipse.material = Cesium.Color.GREEN.withAlpha(0.5);
         break;
       case BeamStatus.Closed:
-        ellipse.material = Cesium.Color.WHITE.withAlpha(0.3);
+        ellipse.material = Cesium.Color.WHITE.withAlpha(0.5);
         break;
     }
   }

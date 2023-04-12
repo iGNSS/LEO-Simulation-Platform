@@ -9,17 +9,17 @@ export class Grid {
   public signalStrength: number[] = [];
   public girdNum: number = 0;
   public max: number = 0;
+  public dlat: number = 0;
 
-  constructor(scope: Cesium.Rectangle, inter: number) {
+  constructor(scope: Cesium.Rectangle, dlat: number) {
     this.scope = scope;
-    const Re = 6371;
-    const dlat = (360 * inter) / (2 * Math.PI * Re);
     for (
       let lat = Cesium.Math.toDegrees(scope.south);
       lat <= Cesium.Math.toDegrees(scope.north);
       lat += dlat
     ) {
-      const dlon = dlat / Math.cos(Cesium.Math.toRadians(lat));
+      //const dlon = dlat / Math.cos(Cesium.Math.toRadians(lat));
+      const dlon = dlat
       for (
         var lon = Cesium.Math.toDegrees(scope.west);
         lon <= Cesium.Math.toDegrees(scope.east);
@@ -38,9 +38,11 @@ export class Grid {
   public get heatmapData(): VcHeatMapData[] {
     return zip(this.positions, this.signalStrength).map(
       ([p, s]): VcHeatMapData => ({
-        x: (p!.longitude / Math.PI) * 1000,
-        y: (p!.latitude / Math.PI) * 1000,
-        value: 30,
+        x: Cesium.Math.toDegrees(p!.longitude) ,
+        y: Cesium.Math.toDegrees(p!.latitude) ,
+        // x: (p!.longitude / Math.PI) * 1000,
+        // y: (p!.latitude / Math.PI) * 1000,
+        value: Number(s),
       })
     );
   }
