@@ -26,6 +26,7 @@
         <!-- https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer -->
         <vc-imagery-provider-arcgis ref="provider" />
       </vc-layer-imagery>
+      <!-- <primitive-test /> -->
       <map-control v-if="initialized" />
     </vc-viewer>
   </vc-config-provider>
@@ -36,6 +37,7 @@ import { VcConfigProvider, VcImageryProviderArcgis, VcLayerImagery, VcViewer } f
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import MapControl from "./MapControl.vue";
 import Heatmap from "./Heatmap.vue";
+import PrimitiveTest from "./PrimitiveTest.vue";
 
 const initialized = ref(false);
 

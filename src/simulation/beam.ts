@@ -31,9 +31,32 @@ const R_e = 6371000;
  * The status of beam.
  */
 export enum BeamStatus {
+  Closed,
   Standby,
   Open,
-  Closed,
+}
+
+class BeamMaterial {
+  public static M: {
+    0: Cesium.Material;
+    1: Cesium.Material;
+    2: Cesium.Material;
+  };
+  public static __init__() {
+    if (BeamMaterial.M) return;
+    const M = {
+      [BeamStatus.Closed]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.WHITE.withAlpha(0.3),
+      }),
+      [BeamStatus.Standby]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.GREEN.withAlpha(0.3),
+      }),
+      [BeamStatus.Open]: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.RED.withAlpha(0.3),
+      }),
+    };
+    BeamMaterial.M = M;
+  }
 }
 
 export class Beam extends Simulatable {
@@ -49,6 +72,7 @@ export class Beam extends Simulatable {
   public cover: boolean[] = [];
   /** Working status of the beam. */
   public status: BeamStatus = BeamStatus.Closed;
+  private _lastStatus: BeamStatus | undefined;
 
   public position: Cesium.PositionProperty | undefined = undefined;
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
@@ -56,27 +80,25 @@ export class Beam extends Simulatable {
 
   constructor(satellite: Satellite, index: int, parent: Cesium.Entity, ctrl: SimulatorControl) {
     super(ctrl);
+    BeamMaterial.__init__();
     this.satellite = satellite;
     this.index = index;
-    this.instance = this.createBeamEntity(parent);
+    this.instance = this.createBeamInstance(parent);
     this.primitive = new Cesium.Primitive({
       geometryInstances: this.instance,
       appearance: new Cesium.EllipsoidSurfaceAppearance({
-        material: Cesium.Material.fromType("Color", {
-          color: new Cesium.Color(1.0, 1.0, 1.0, 0.3),
-        }),
+        material: BeamMaterial.M[BeamStatus.Closed],
       }),
     });
     this.cover = Array(this.sim.users.length).fill(false);
   }
 
   //创建波束
-  private createBeamEntity(parent: Cesium.Entity) {
+  private createBeamInstance(parent: Cesium.Entity) {
     const instance = new Cesium.GeometryInstance({
       geometry: new Cesium.CircleGeometry({
-        center: Cesium.Cartesian3.fromArray([1, 1, 1]),
-        // height: 0,
-        // granularity: 0.05,
+        center: Cesium.Cartesian3.fromDegrees(0, 0),
+        granularity: 0.05,
         radius: (782368.72 / Math.cos(El[this.index])) * Math.tan(BW / 2),
       }),
     });
@@ -136,17 +158,11 @@ export class Beam extends Simulatable {
 
   public update(time: Cesium.JulianDate) {
     this.currentPosition = this.position!.getValue(time)!;
-    // this.instance.geometry.center = this.currentPosition;
     this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
     for (let k = 0; k < this.sim.users.length; k++) {
       const user = this.sim.users[k];
       this.cover[k] = this.nearUser(user) && this.getValue(user).isCovered;
     }
-    // console.log(this.instance.geometry)
-    // this.instance.geometry.center = this.currentPosition;
-    // console.log(this.currentPosition);
-    this.primitive.modelMatrix = Cesium.Matrix4.fromTranslation(this.currentPosition);
-    console.log(this.instance.modelMatrix, this.primitive.modelMatrix);
   }
 
   private nearUser(user: User): boolean {
@@ -179,22 +195,21 @@ export class Beam extends Simulatable {
   }
 
   public updateDisplay(covered: boolean): void {
-    if (!covered) {
-      return;
+    this.primitive.show = covered;
+    if (covered) {
+      this.primitive.modelMatrix = Cesium.Matrix4.fromRotation(
+        Cesium.Matrix3.fromHeadingPitchRoll(
+          new Cesium.HeadingPitchRoll(
+            -this.currentPositionCarto.longitude,
+            this.currentPositionCarto.latitude,
+            0
+          )
+        )
+      );
+      if (this._lastStatus != this.status) {
+        this.primitive.appearance.material = BeamMaterial.M[this.status];
+      }
     }
-
-    this.primitive.show = true;
-    /* const ellipse = this.entity.ellipse!;
-    switch (this.status) {
-      case BeamStatus.Open:
-        ellipse.material = Cesium.Color.RED.withAlpha(0.3);
-        break;
-      case BeamStatus.Standby:
-        ellipse.material = Cesium.Color.GREEN.withAlpha(0.3);
-        break;
-      case BeamStatus.Closed:
-        ellipse.material = Cesium.Color.WHITE.withAlpha(0.3);
-        break;
-    } */
+    this._lastStatus = this.status;
   }
 }
