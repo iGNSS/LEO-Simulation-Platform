@@ -1,75 +1,68 @@
 import { Beam, BeamStatus } from "./beam";
 import { Simulatable } from "./simulatable";
 import { BeamDisplayLevel, SimulatorControl } from "./simulator-control";
+import { groundMatrix } from "@/utils/cesium-math";
 
 export class Satellite extends Simulatable {
   private static readonly beamNum: int = 48;
 
-  public readonly entity: Cesium.Entity;
+  public readonly primitive: Cesium.Model;
   public readonly beams: Beam[] = [];
   private readonly position: Cesium.PositionProperty;
-  private readonly waveEntity: Cesium.Entity;
-  private readonly beamPrimitives: Cesium.PrimitiveCollection;
+  public readonly rangePrimitive: Cesium.Primitive;
+  public readonly beamPrimitives: Cesium.PrimitiveCollection;
 
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
 
   constructor(entity: Cesium.Entity, ctrl: SimulatorControl) {
     super(ctrl);
-    this.entity = entity;
     this.position = entity.position!;
     entity.name = "satellite";
+    this.primitive = this.createPrimitive(entity);
     this.beamPrimitives = new Cesium.PrimitiveCollection({ show: false });
-    this.waveEntity = this.createCircle();
-    this.beams = this.createBeams();
+    this.rangePrimitive = this.createCircle();
+    this.beams = this.createBeams(entity);
+  }
+
+  private createPrimitive(entity: Cesium.Entity) {
+    const primitive = Cesium.Model.fromGltf({
+      url: this.ctrl.config.satelliteModelUrl,
+      scale: 10.0,
+      minimumPixelSize: 32,
+      // maximumScale: 4,
+      id: entity.id,
+    });
+    return primitive;
   }
 
   //创建圆面
   private createCircle() {
-    const circleEntity = this.ctrl.viewer.entities.add({
-      ellipse: {
-        semiMajorAxis: 1800000 * 1.3,
-        semiMinorAxis: 1800000 * 1.3,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        outline: true,
-        fill: false,
-        numberOfVerticalLines: 0,
-        material: Cesium.Color.RED,
-        outlineColor: this.ctrl.config.circleColor.withAlpha(0.2),
-        outlineWidth: 100,
-      },
+    const primitive = new Cesium.Primitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.CircleOutlineGeometry({
+          center: Cesium.Cartesian3.fromDegrees(0, 0, 400000),
+          radius: 1800000 * 1.3,
+        }),
+        attributes: {
+          color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.VIOLET),
+        },
+      }),
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        material: Cesium.Material.fromType("Color", {
+          color: this.ctrl.config.circleColor.withAlpha(0.2),
+        }),
+      }),
+      // show: false,
     });
-    circleEntity.show = false;
-    circleEntity.position = this.setPosition(this.entity);
-    return circleEntity;
-  }
-
-  //卫星位置记录
-  private setPosition(entity: Cesium.Entity): Cesium.SampledPositionProperty {
-    const property = new Cesium.SampledPositionProperty();
-    for (let i = 0; i < Beam.pointNum; i++) {
-      const time = Cesium.JulianDate.addSeconds(
-        this.ctrl.viewer.clock.startTime,
-        300 * i,
-        new Cesium.JulianDate()
-      );
-      const position = entity.position?.getValue(time);
-      if (position) {
-        const cartographic = this.ctrl.ellipsoid.cartesianToCartographic(position);
-        const lat = Cesium.Math.toDegrees(cartographic.latitude),
-          lng = Cesium.Math.toDegrees(cartographic.longitude),
-          hei = cartographic.height / 1.9;
-        property.addSample(time, Cesium.Cartesian3.fromDegrees(lng, lat, hei));
-      }
-    }
-    return property;
+    return primitive;
   }
 
   //创建波束
-  private createBeams(): Beam[] {
+  private createBeams(entity: Cesium.Entity): Beam[] {
     const beams = [];
     for (let j = 0; j < Satellite.beamNum; j++) {
-      beams.push(new Beam(this, j, this.entity, this.ctrl));
+      beams.push(new Beam(this, j, entity, this.ctrl));
       this.beamPrimitives.add(beams.at(-1)?.primitive);
     }
     return beams;
@@ -78,19 +71,22 @@ export class Satellite extends Simulatable {
   public update(time: Cesium.JulianDate): void {
     this.currentPosition = this.position.getValue(time)!;
     this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
+    this.primitive.modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(this.currentPosition);
     this.beams.forEach(b => b.update(time));
   }
 
   public showBeams(level: BeamDisplayLevel): void {
-    this.waveEntity.show = true;
-    let covered =
+    this.rangePrimitive.modelMatrix = groundMatrix(this.currentPositionCarto);
+    // this.rangePrimitive.show = true;
+
+    const covered =
       level === BeamDisplayLevel.All || this.beams.some(b => b.status != BeamStatus.Closed);
     this.beamPrimitives.show = covered;
     this.beams.forEach(b => b.updateDisplay(covered));
   }
 
   public hideBeams(): void {
-    this.waveEntity.show = false;
+    // this.rangePrimitive.show = false;
     this.beamPrimitives.show = false;
   }
 }

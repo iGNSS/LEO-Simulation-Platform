@@ -16,3 +16,11 @@ export function roundTo(x: number, n: number): number {
   const k = Math.pow(10, n);
   return Math.round(x * k) / k;
 }
+
+export function groundMatrix(position: Cesium.Cartographic): Cesium.Matrix4 {
+  return Cesium.Matrix4.fromRotation(
+    Cesium.Matrix3.fromHeadingPitchRoll(
+      new Cesium.HeadingPitchRoll(-position.longitude, position.latitude, 0)
+    )
+  );
+}

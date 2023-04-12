@@ -1,4 +1,4 @@
-import { difference, longitudeDifference, toRadians } from "@/utils/cesium-math";
+import { difference, groundMatrix, longitudeDifference, toRadians } from "@/utils/cesium-math";
 import { SimulatorControl } from "./simulator-control";
 import { Satellite } from "./satellite";
 import { User } from "./user";
@@ -65,7 +65,6 @@ export class Beam extends Simulatable {
   public static readonly pointNum: int = 292;
 
   public readonly satellite: Satellite;
-  // public readonly entity: Cesium.Entity; // WaveEntity
   public readonly instance: Cesium.GeometryInstance;
   public readonly primitive: Cesium.Primitive;
   public readonly index: int;
@@ -199,15 +198,7 @@ export class Beam extends Simulatable {
   public updateDisplay(covered: boolean): void {
     this.primitive.show = covered;
     if (covered) {
-      this.primitive.modelMatrix = Cesium.Matrix4.fromRotation(
-        Cesium.Matrix3.fromHeadingPitchRoll(
-          new Cesium.HeadingPitchRoll(
-            -this.currentPositionCarto.longitude,
-            this.currentPositionCarto.latitude,
-            0
-          )
-        )
-      );
+      this.primitive.modelMatrix = groundMatrix(this.currentPositionCarto);
       if (this._lastStatus != this.status) {
         this.primitive.appearance.material = BeamMaterial.M[this.status];
       }

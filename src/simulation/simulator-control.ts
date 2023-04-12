@@ -7,6 +7,7 @@ import { User } from "./user";
 export interface DisplayConfig {
   circleColor: Cesium.Color;
   terminalImageUrl: string;
+  satelliteModelUrl: string;
 }
 
 export enum BeamDisplayLevel {
@@ -25,6 +26,7 @@ export class SimulatorControl {
   public valid: boolean = false;
 
   private readonly billboards: Cesium.BillboardCollection;
+  private readonly satellitePrimitives: Cesium.PrimitiveCollection;
   private readonly beamPrimitives: Cesium.PrimitiveCollection;
 
   public get scene(): Cesium.Scene {
@@ -39,34 +41,11 @@ export class SimulatorControl {
     this.config = config;
     this.viewer = viewer;
     this.billboards = viewer.scene.primitives.add(new Cesium.BillboardCollection());
-    this.beamPrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection({ show: false}));
-    this.sim = new Simulator();
-
-    var center = Cesium.Cartesian3.fromDegrees(0, 0);
-    var radius = 250000.0;
-    var circleInstance = new Cesium.GeometryInstance({
-      geometry: new Cesium.CircleGeometry({
-        center: center,
-        radius: radius,
-        stRotation: Cesium.Math.toRadians(90),
-        vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
-      }),
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.VIOLET),
-      },
-    });
-    circleInstance.modelMatrix = Cesium.Matrix4.fromRotation(Cesium.Matrix3.fromRotationY(0.1));
-    console.log(circleInstance);
-    this.beamPrimitives.add(
-      new Cesium.Primitive({
-        geometryInstances: [circleInstance],
-        appearance: new Cesium.EllipsoidSurfaceAppearance({
-          material: Cesium.Material.fromType("Color", {
-            color: new Cesium.Color(1.0, 1.0, 1.0, 0.3),
-          }),
-        }),
-      })
+    this.satellitePrimitives = viewer.scene.primitives.add(new Cesium.PrimitiveCollection());
+    this.beamPrimitives = viewer.scene.primitives.add(
+      new Cesium.PrimitiveCollection({ show: false })
     );
+    this.sim = new Simulator();
   }
 
   public async load(dataset: Dataset): Promise<void> {
@@ -79,14 +58,16 @@ export class SimulatorControl {
 
   private async loadCZML(czml: any): Promise<void> {
     const dataSource = await this.viewer.dataSources.add(Cesium.CzmlDataSource.load(czml));
-    if (dataSource?.entities) {
-      this.dataSource = dataSource;
-      for (const satellite of dataSource.entities.values) {
-        this.sim.satellites.push(new Satellite(satellite, this));
-        this.beamPrimitives.add(this.sim.satellites.at(-1)!.beamPrimitives);
-      }
-      console.log(this.beamPrimitives);
+    for (const entity of dataSource.entities.values) {
+      const satellite = new Satellite(entity, this);
+      this.sim.satellites.push(satellite);
+      this.satellitePrimitives.add(satellite.primitive);
+      this.beamPrimitives.add(satellite.rangePrimitive);
+      this.beamPrimitives.add(satellite.beamPrimitives);
     }
+    dataSource.entities.removeAll(); // 会导致轨道没了
+    console.log(this.satellitePrimitives);
+    // this.viewer.dataSources.remove(dataSource);
   }
 
   public addUsers(): void {
@@ -115,6 +96,7 @@ export class SimulatorControl {
     this.sim.clear();
     this.viewer.entities.removeAll();
     this.billboards.removeAll();
+    this.satellitePrimitives.removeAll();
     this.beamPrimitives.removeAll();
     this.viewer.dataSources.removeAll(true);
     this.dataSource = undefined;

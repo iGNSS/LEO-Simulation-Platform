@@ -52,12 +52,6 @@ export class Dataset {
       // 是否显示标签
       item.label.show = this.options.showLabel;
       //添加模型
-      item.model = {
-        gltf: this.options.modelUrl,
-        scale: 10.0,
-        minimumPixelSize: 32,
-        maximumPixelSize: 64,
-      };
       for (let j = 0; j < this.options.satelliteNum; j++) {
         let copy = JSON.parse(JSON.stringify(item));
         if (j > 0) {

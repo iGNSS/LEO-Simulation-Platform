@@ -204,6 +204,7 @@ const curInfo = reactive({
 let ctrl: SimulatorControl = new SimulatorControl(viewer, {
   circleColor: Cesium.Color.WHITE,
   terminalImageUrl: "/img/终端.png",
+  satelliteModelUrl: "/gltf-models/satellite.gltf",
 });
 let tickCount = 0;
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
@@ -234,7 +235,7 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     Object.assign(curInfo, ctrl.getCurrentInfo());
 
     //计算波束强度
-    if (tickCount % 10 == 0) {
+    if (tickCount % 10 == 0 && false) {
       const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
       // console.log(ss);
       grid.updateData(ss);
