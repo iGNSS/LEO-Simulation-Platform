@@ -45,6 +45,7 @@ const options: any = reactive({
     0.5: "yellow",
     0.3: "blue",
     0.1: "green",
+    0.0: "transparent"
   },
 });
 

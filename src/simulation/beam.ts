@@ -1,5 +1,5 @@
 import { SimulatorControl } from "@/controllers/simulator-control";
-import { cartDiff, groundMatrix, lngDiff } from "@/utils/cesium-math";
+import { cartDiff, groundMatrix, lngDiff, latDiff } from "@/utils/cesium-math";
 import { Az, BW, CoverFar, El } from "./beam-constants";
 import { R_e } from "./constants";
 import { Satellite } from "./satellite";
@@ -120,9 +120,9 @@ export class Beam extends Simulatable {
   private nearUser(user: User): boolean {
     const positionS = this.satellite.currentPositionCarto;
     const positionU = user.currentPositionCarto;
-    return lngDiff(positionS.longitude, positionU.longitude) <= BW;
+    return (lngDiff(positionS.longitude, positionU.longitude) <= BW) && (latDiff(positionS.latitude, positionU.latitude) <= BW);
   }
-
+  
   //波束用户夹角及覆盖情况
   /**
    * Get the angle between a user and whether covers the user.

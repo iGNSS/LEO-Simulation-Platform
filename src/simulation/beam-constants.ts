@@ -24,7 +24,7 @@ for (let j = 16; j < BeamsPerSatellite; j++) {
 }
 
 /** 波束角 */
-export const BW = toRadians(40);
+export const BW = toRadians(30);
 
 /** 计算 cover 的最远距离 */
 export const CoverFar = 2400000;

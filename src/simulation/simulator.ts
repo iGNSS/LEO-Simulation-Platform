@@ -118,8 +118,8 @@ export class Simulator {
 
       const distance = Cesium.Cartesian3.distance(positionS, positionU);
 
-      if (distance < CoverFar && angleBU < 2 * BW) {
-        signalStrength += Math.cos(2 * angleBU);
+      if (distance < CoverFar && angleBU < BW) {
+        signalStrength += Math.cos(3 * angleBU);
       }
     }
 

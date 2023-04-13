@@ -5,18 +5,29 @@ export function cartDiff(left: Cesium.Cartesian3, right: Cesium.Cartesian3): Ces
 }
 
 /**
- * TODO!
  * Calculate the absolute longitude differences of two longitudes in radians.
  * @param left
  * @param right
  * @returns
  */
 export function lngDiff(left: number, right: number): number {
-  return Math.min(left - right);
+  var result = Math.abs(left - right);
+  return result < 180 ? result : 360 - result;
 }
 
-export function cartoLngDiffDeg(left: Cesium.Cartographic, right: Cesium.Cartographic): number {
-  return Cesium.Math.toDegrees(left.longitude) - Cesium.Math.toDegrees(right.longitude);
+export function isNear(left: Cesium.Cartographic, right: Cesium.Cartographic, rad: number): boolean {
+  return (lngDiff(left.longitude,right.longitude) < rad) && (latDiff(left.latitude,right.latitude) < rad);
+}
+
+/**
+ * Calculate the absolute longitude differences of two latitudes in radians.
+ * @param left
+ * @param right
+ * @returns
+ */
+export function latDiff(left: number, right: number): number {
+  var result = Math.abs(left - right);
+  return result;
 }
 
 export function deg2Coord(radians: number): number {
