@@ -1,10 +1,10 @@
-import { cartDiff, groundMatrix, cartoLngDiffDeg, lngDiff } from "@/utils/cesium-math";
-import { SimulatorControl } from "./simulator-control";
-import { Satellite } from "./satellite";
-import { User } from "./user";
-import { Simulatable } from "./simulatable";
+import { SimulatorControl } from "@/controllers/simulator-control";
+import { cartDiff, groundMatrix, lngDiff } from "@/utils/cesium-math";
 import { Az, BW, CoverFar, El } from "./beam-constants";
 import { R_e } from "./constants";
+import { Satellite } from "./satellite";
+import { Simulatable } from "./simulatable";
+import { User } from "./user";
 
 /**
  * The status of beam.

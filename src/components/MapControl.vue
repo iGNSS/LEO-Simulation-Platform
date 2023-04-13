@@ -80,20 +80,44 @@
                 :marker-labels="v => BeamDisplayLevel[v].toString()"
                 :min="0"
                 :max="2"
-                @change="onBeamDisplayChanged"
+                @change="mngr.changeBeamDisplay($event)"
               />
             </q-item-section>
           </q-item>
+          <q-toggle
+            v-model="controls.showHeatmap"
+            dark
+            keep-color
+            label="显示信号强度"
+            class="white-label"
+            @update:model-value="onToggleHeatmap"
+          />
         </q-card-section>
       </q-card>
     </div>
     <div class="right">
-      <q-card dark bordered>
+      <div class="file">
+        <q-file
+          dark
+          filled
+          v-model="controls.file"
+          label="卫星数据文件"
+          accept=".czml"
+          @update:model-value="onFileUpload"
+        >
+          <template v-slot:prepend>
+            <q-icon name="cloud_upload" />
+          </template>
+        </q-file>
+      </div>
+    </div>
+    <div class="bottom-right">
+      <q-card dark bordered class="time-panel">
         <q-card-section>
           <div class="text-h6">仿真控制</div>
         </q-card-section>
         <q-separator dark inset />
-        <q-card-section class="time-panel">
+        <q-card-section>
           <div>
             <p>
               <span class="text-grey-5">仿真时间：</span>
@@ -117,42 +141,15 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="file">
-      <q-file
-        dark
-        filled
-        v-model="controls.file"
-        label="卫星数据文件"
-        accept=".czml"
-        @update:model-value="onFileUpload"
-      >
-        <template v-slot:prepend>
-          <q-icon name="cloud_upload" />
-        </template>
-      </q-file>
-    </div>
-    <div class="toggle">
-      <q-toggle
-        v-model="controls.showHeatmap"
-        dark
-        keep-color
-        color="white"
-        label="显示信号强度"
-        class="white-label"
-        @update:model-value="onToggleHeatmap"
-      />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Dataset } from "@/simulation/dataset";
-import { BeamDisplayLevel, SimulatorControl } from "@/simulation/simulator-control";
+import { MainManager } from "@/controllers/main-manager";
+import { BeamDisplayLevel } from "@/controllers/simulator-control";
+import { roundTo } from "@/utils/cesium-math";
 import { useVueCesium } from "vue-cesium";
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
-import { registerEvent } from "./interact";
-import { Grid } from "@/simulation/grid";
-import { roundTo } from "@/utils/cesium-math";
 
 const $vc = useVueCesium();
 const viewer = $vc.viewer;
@@ -162,8 +159,6 @@ console.log("useQuasar", $q);
 
 const heatmap = (inject("heatmap") as any).value;
 console.log("heatmap", heatmap.heatmap);
-const grid = new Grid(Cesium.Rectangle.fromDegrees(60, 0, 120, 60), 1); // 考虑用grid来控制heatmap
-console.log(grid);
 
 const initialized = ref(false);
 
@@ -214,62 +209,40 @@ const curInfo = reactive({
   userNum: 0,
 });
 
-let ctrl: SimulatorControl = new SimulatorControl(viewer, {
-  circleColor: Cesium.Color.WHITE,
-  terminalImageUrl: "/img/终端.png",
-  satelliteModelUrl: "/gltf-models/satellite.gltf",
-});
-let tickCount = 0;
+const mngr = new MainManager(viewer, heatmap);
+
+const onUpdate = () => {
+  timeOptions.now = viewer.clock.currentTime.toString().replace(/[TZ]|(\.\d+)/g, " ");
+
+  const position = viewer.camera.positionCartographic;
+  if (!controls.longitudeFocused)
+    controls.longitude = roundTo(Cesium.Math.toDegrees(position.longitude), 3);
+  if (!controls.latitudeFocused)
+    controls.latitude = roundTo(Cesium.Math.toDegrees(position.latitude), 3);
+  if (!controls.heightFocused) controls.height = roundTo(position.height / 1000, 2);
+
+  mngr.update();
+  if (!mngr.ctrl.valid) return;
+
+  mngr.ctrl.showBeams(controls.beamDisplay);
+
+  Object.assign(curInfo, mngr.ctrl.getCurrentInfo());
+};
+
 $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
   console.log("Init!");
-  // 然后要注册事件
-  registerEvent(viewer);
+  mngr.start();
   viewer.clock.shouldAnimate = true;
-  // 注册监听事件，在postRenderListener回调函数中添加
-  viewer.clock.onTick.addEventListener(() => {
-    tickCount++;
-
-    timeOptions.now = viewer.clock.currentTime.toString().replace(/[TZ]|(\.\d+)/g, " ");
-
-    const position = viewer.camera.positionCartographic;
-    if (!controls.longitudeFocused)
-      controls.longitude = roundTo(Cesium.Math.toDegrees(position.longitude), 3);
-    if (!controls.latitudeFocused)
-      controls.latitude = roundTo(Cesium.Math.toDegrees(position.latitude), 3);
-    if (!controls.heightFocused) controls.height = roundTo(position.height / 1000, 2);
-
-    if (!ctrl.valid) return;
-
-    ctrl.sim.update(viewer.clock.currentTime);
-    ctrl.sim.closeBeam();
-    if (controls.beamDisplay != BeamDisplayLevel.None) {
-      ctrl.showBeams(controls.beamDisplay);
-    }
-    Object.assign(curInfo, ctrl.getCurrentInfo());
-  });
-
-  heatmap.setRect(grid.scope, grid.step);
-
-  console.log("container", heatmap.heatmap.options.container);
-
-  heatmap.setData(0, 1, grid.heatmapData);
-  console.log(grid.heatmapData);
+  viewer.clock.onTick.addEventListener(onUpdate);
   initialized.value = true;
 });
 
 const loadAndRun = async (czmlStr: string) => {
-  if (ctrl.valid) {
+  if (mngr.ctrl.valid) {
     $q.notify({ type: "info", message: "加载新数据集" });
   }
-  const dataset = new Dataset(czmlStr, {
-    satelliteNum: 11,
-    userNum: 20,
-    showLabel: false,
-    modelUrl: "/gltf-models/satellite.gltf",
-  });
-  await ctrl.load(await dataset.load());
+  await mngr.loadAndRun(czmlStr);
   $q.notify({ type: "info", message: "加载完成！" });
-  viewer.scene.requestRender();
 };
 
 const onCameraPositionChanged = () => {
@@ -282,19 +255,9 @@ const onCameraPositionChanged = () => {
   });
 };
 
-const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
-  console.log("changed", ctrl, val);
-  if (ctrl && val === BeamDisplayLevel.None) ctrl.hideBeams();
-};
-
 const onToggleHeatmap = (val: boolean) => {
-  if (val) {
-    const ss = grid.positions.map(p => ctrl.sim.getSignalStrength(p));
-    grid.updateData(ss);
-    heatmap.setData(0, 1, grid.heatmapData);
-  }
-  viewer.clock.shouldAnimate = timeOptions.playing = !val;
-  heatmap.props.show = val;
+  mngr.toggleHeatmap(val);
+  timeOptions.playing = !val;
 };
 
 const onFileUpload = async (file: File | null) => {
@@ -319,15 +282,18 @@ const onFileUpload = async (file: File | null) => {
 
   .left {
     float: left;
-    width: 20%;
+    width: 25%;
+    max-width: 200px;
   }
 
   .right {
-    display: none;
     float: right;
+  }
+
+  .bottom-right {
     position: absolute;
-    bottom: 0;
     right: 0;
+    bottom: 0;
   }
 
   .q-card__section--vert {
@@ -361,8 +327,7 @@ const onFileUpload = async (file: File | null) => {
 
 .file {
   top: 100px;
-  float: right;
-  width: 20%;
+  max-width: 180px;
 }
 
 .white-label {

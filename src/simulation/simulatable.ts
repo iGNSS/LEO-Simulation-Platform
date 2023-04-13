@@ -1,5 +1,5 @@
+import { SimulatorControl } from "@/controllers/simulator-control";
 import { Simulator } from "./simulator";
-import { SimulatorControl } from "./simulator-control";
 
 export abstract class Simulatable {
   protected readonly ctrl: SimulatorControl;

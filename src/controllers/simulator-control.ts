@@ -1,9 +1,9 @@
-import { BeamStatus } from "./beam";
+import { BeamStatus } from "@/simulation/beam";
+import { Satellite } from "@/simulation/satellite";
+import { Simulator } from "@/simulation/simulator";
+import { User } from "@/simulation/user";
 import { Dataset } from "./dataset";
-import { DisplayConfig, DisplayFactory } from "../utils/display-factory";
-import { Satellite } from "./satellite";
-import { Simulator } from "./simulator";
-import { User } from "./user";
+import { DisplayConfig, DisplayFactory } from "./display-factory";
 
 export enum BeamDisplayLevel {
   /** Display nothing. */
@@ -96,6 +96,7 @@ export class SimulatorControl {
    * @param level The level of beam display.
    */
   public showBeams(level: BeamDisplayLevel): void {
+    if (level === BeamDisplayLevel.None) return;
     this.beamPrimitives.show = true;
     this.sim.satellites.forEach(s => s.showBeams(level));
   }

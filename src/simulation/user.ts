@@ -1,5 +1,5 @@
+import { SimulatorControl } from "@/controllers/simulator-control";
 import { Simulatable } from "./simulatable";
-import { SimulatorControl } from "./simulator-control";
 
 export class User extends Simulatable {
   position: Cesium.Cartesian3;

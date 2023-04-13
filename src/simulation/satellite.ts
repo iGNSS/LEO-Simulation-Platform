@@ -1,8 +1,8 @@
+import { BeamDisplayLevel, SimulatorControl } from "@/controllers/simulator-control";
+import { groundMatrix } from "@/utils/cesium-math";
 import { Beam, BeamStatus } from "./beam";
 import { BeamsPerSatellite } from "./beam-constants";
 import { Simulatable } from "./simulatable";
-import { BeamDisplayLevel, SimulatorControl } from "./simulator-control";
-import { groundMatrix } from "@/utils/cesium-math";
 
 export class Satellite extends Simulatable {
   public readonly entity: Cesium.Entity;

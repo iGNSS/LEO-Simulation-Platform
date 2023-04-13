@@ -32,7 +32,7 @@ const props = reactive({
   rectangle: <VcRectangle>[0, 0, 1, 1],
 });
 
-const options: HeatmapConfiguration = reactive({
+const options: any = reactive({
   backgroundColor: "rgb(0,0,255)",
   opacity: 0.2,
   radius: 5,
@@ -66,7 +66,6 @@ function setData(min: number, max: number, data_: VcHeatMapData[]) {
   props.min = min;
   props.max = max;
   data.value = data_;
-  console.log("data", data);
 }
 
 const onHeatmapReady = ({ Cesium, viewer, cesiumObject }: VcReadyObject) => {

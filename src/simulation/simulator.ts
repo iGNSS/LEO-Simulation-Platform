@@ -1,9 +1,9 @@
+import { cartDiff } from "@/utils/cesium-math";
+import Lazy from "lazy.js";
+import { Beam, BeamStatus } from "./beam";
+import { BW, CoverFar } from "./beam-constants";
 import { Satellite } from "./satellite";
 import { User } from "./user";
-import { Beam, BeamStatus } from "./beam";
-import Lazy from "lazy.js";
-import { BW, CoverFar } from "./beam-constants";
-import { cartDiff } from "@/utils/cesium-math";
 
 export class Simulator {
   public readonly satellites: Satellite[] = [];

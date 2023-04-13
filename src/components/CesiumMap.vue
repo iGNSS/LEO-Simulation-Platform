@@ -37,7 +37,6 @@ import { VcConfigProvider, VcImageryProviderArcgis, VcLayerImagery, VcViewer } f
 import type { VcReadyObject } from "vue-cesium/es/utils/types";
 import MapControl from "./MapControl.vue";
 import Heatmap from "./Heatmap.vue";
-import PrimitiveTest from "./PrimitiveTest.vue";
 
 const initialized = ref(false);
 
