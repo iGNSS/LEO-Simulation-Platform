@@ -248,7 +248,7 @@ $vc.creatingPromise.then(async (readyObj: VcReadyObject) => {
     Object.assign(curInfo, ctrl.getCurrentInfo());
   });
 
-  heatmap.setRect(grid.scope, grid.dlat);
+  heatmap.setRect(grid.scope, grid.step);
 
   console.log("container", heatmap.heatmap.options.container);
 
@@ -289,7 +289,7 @@ const onBeamDisplayChanged = (val: BeamDisplayLevel) => {
 
 const onToggleHeatmap = (val: boolean) => {
   if (val) {
-    const ss = grid.positions.map(p => ctrl.sim.updateSignalStrength(p));
+    const ss = grid.positions.map(p => ctrl.sim.getSignalStrength(p));
     grid.updateData(ss);
     heatmap.setData(0, 1, grid.heatmapData);
   }

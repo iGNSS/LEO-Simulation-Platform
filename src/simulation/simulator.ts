@@ -2,7 +2,8 @@ import { Satellite } from "./satellite";
 import { User } from "./user";
 import { Beam, BeamStatus } from "./beam";
 import Lazy from "lazy.js";
-import { BW } from "./beam-constants";
+import { BW, CoverFar } from "./beam-constants";
+import { cartDiff } from "@/utils/cesium-math";
 
 export class Simulator {
   public readonly satellites: Satellite[] = [];
@@ -24,6 +25,9 @@ export class Simulator {
     }
   }
 
+  /**
+   * Clear satellites and users.
+   */
   public clear(): void {
     this.satellites.length = 0;
     this.users.length = 0;
@@ -34,7 +38,11 @@ export class Simulator {
     this.users.forEach(u => u.update(time));
   }
 
-  //计算重叠函数 = 覆盖总数/它覆盖的用户数
+  /**
+   * 计算重叠函数 = 覆盖总数/它覆盖的用户数
+   * @param beam
+   * @returns
+   */
   public countOverlap(beam: Beam): number {
     let D = 0,
       N = 0;
@@ -46,18 +54,27 @@ export class Simulator {
     return N / D;
   }
 
-  //找出所有需要覆盖用户的下标集合
+  /**
+   * 找出所有需要覆盖用户的下标集合
+   * @returns
+   */
   public coveredUsers() {
     return Lazy.range(this.users.length).filter(k => this.beams.some(b => b.cover[k]));
   }
 
-  //检测是否所有用户被覆盖
-  isWorking(): boolean {
+  /**
+   * 检测是否所有用户被覆盖
+   * @returns
+   */
+  public isWorking(): boolean {
     // 判断是否每个都被open的覆盖了
     return this.coveredUsers().every(idx => this.beams.some(b => b.coversUser(idx)));
   }
 
-  closeBeam(): void {
+  /**
+   * Try to close redundant beams.
+   */
+  public closeBeam(): void {
     //找出所有待命波束
     const standbyBeams: [Beam, number][] = [];
     for (const beam of this.iterBeams()) {
@@ -79,19 +96,21 @@ export class Simulator {
     }
   }
 
-  updateSignalStrength(position: Cesium.Cartographic): number {
+  /**
+   * Get the signal strength of a given position.
+   * @param position
+   * @returns The signal strength.
+   */
+  public getSignalStrength(position: Cesium.Cartographic): number {
     let signalStrength = 0;
     const angles = [];
-    for (const sat of this.satellites) {
-      const positionU = Cesium.Cartesian3.fromRadians(
-        position.longitude,
-        position.latitude,
-        position.height
-      );
 
+    const positionU = Cesium.Cartographic.toCartesian(position);
+
+    for (const sat of this.satellites) {
       const positionS = sat.currentPosition;
 
-      const vectorUS = Cesium.Cartesian3.subtract(positionS, positionU, new Cesium.Cartesian3());
+      const vectorUS = cartDiff(positionS, positionU);
 
       // 波束和用户之间的夹角
       const angleBU = Cesium.Cartesian3.angleBetween(vectorUS, positionS);
@@ -99,11 +118,11 @@ export class Simulator {
 
       const distance = Cesium.Cartesian3.distance(positionS, positionU);
 
-      if (distance < 2400000 && angleBU < 2 * BW) {
+      if (distance < CoverFar && angleBU < 2 * BW) {
         signalStrength += Math.cos(2 * angleBU);
       }
     }
-    // console.log("strength", signalStrength);
+
     return signalStrength;
   }
 }

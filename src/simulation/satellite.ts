@@ -1,14 +1,13 @@
 import { Beam, BeamStatus } from "./beam";
+import { BeamsPerSatellite } from "./beam-constants";
 import { Simulatable } from "./simulatable";
 import { BeamDisplayLevel, SimulatorControl } from "./simulator-control";
 import { groundMatrix } from "@/utils/cesium-math";
 
 export class Satellite extends Simulatable {
-  private static readonly beamNum: int = 48;
-
   public readonly entity: Cesium.Entity;
   public readonly beams: Beam[] = [];
-  private readonly position: Cesium.PositionProperty;
+  public readonly position: Cesium.PositionProperty;
   public readonly rangePrimitive: Cesium.Primitive;
   public readonly beamPrimitives: Cesium.PrimitiveCollection;
 
@@ -18,15 +17,17 @@ export class Satellite extends Simulatable {
   constructor(entity: Cesium.Entity, ctrl: SimulatorControl) {
     super(ctrl);
     this.position = entity.position!;
-    entity.name = "satellite";
     this.entity = entity;
     this.beamPrimitives = new Cesium.PrimitiveCollection({ show: false });
-    this.rangePrimitive = this.createCircle();
-    this.beams = this.createBeams(entity);
+    this.rangePrimitive = this.createRangeCircle();
+    this.beams = this.createBeams();
   }
 
-  //创建圆面
-  private createCircle() {
+  /**
+   * Create the range circle primitive of this satellite.
+   * @returns
+   */
+  private createRangeCircle() {
     const primitive = new Cesium.Primitive({
       geometryInstances: this.ctrl.factory.satelliteRangeInstance,
       appearance: this.ctrl.factory.satelliteRangeAppearance,
@@ -34,11 +35,14 @@ export class Satellite extends Simulatable {
     return primitive;
   }
 
-  //创建波束
-  private createBeams(entity: Cesium.Entity): Beam[] {
+  /**
+   * Create beams of this satellite.
+   * @returns
+   */
+  private createBeams(): Beam[] {
     const beams = [];
-    for (let j = 0; j < Satellite.beamNum; j++) {
-      beams.push(new Beam(this, j, entity, this.ctrl));
+    for (let j = 0; j < BeamsPerSatellite; j++) {
+      beams.push(new Beam(this, j, this.ctrl));
       this.beamPrimitives.add(beams.at(-1)?.primitive);
     }
     return beams;
@@ -50,18 +54,23 @@ export class Satellite extends Simulatable {
     this.beams.forEach(b => b.update(time));
   }
 
+  /**
+   * Show beams and update their display.
+   * @param level The level of beam display.
+   */
   public showBeams(level: BeamDisplayLevel): void {
     this.rangePrimitive.modelMatrix = groundMatrix(this.currentPositionCarto);
-    // this.rangePrimitive.show = true;
 
-    const covered =
+    const needShow =
       level === BeamDisplayLevel.All || this.beams.some(b => b.status != BeamStatus.Closed);
-    this.beamPrimitives.show = covered;
-    this.beams.forEach(b => b.updateDisplay(covered));
+    this.beamPrimitives.show = needShow;
+    this.beams.forEach(b => b.updateDisplay(needShow));
   }
 
+  /**
+   * Hide beams of this satellite.
+   */
   public hideBeams(): void {
-    // this.rangePrimitive.show = false;
     this.beamPrimitives.show = false;
   }
 }

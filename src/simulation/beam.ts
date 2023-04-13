@@ -1,11 +1,10 @@
-import { difference, groundMatrix, longitudeDifference } from "@/utils/cesium-math";
+import { cartDiff, groundMatrix, cartoLngDiffDeg, lngDiff } from "@/utils/cesium-math";
 import { SimulatorControl } from "./simulator-control";
 import { Satellite } from "./satellite";
 import { User } from "./user";
 import { Simulatable } from "./simulatable";
-import { Az, BW, El } from "./beam-constants";
-
-const R_e = 6371000;
+import { Az, BW, CoverFar, El } from "./beam-constants";
+import { R_e } from "./constants";
 
 /**
  * The status of beam.
@@ -27,21 +26,27 @@ export class Beam extends Simulatable {
   public cover: boolean[] = [];
   /** Working status of the beam. */
   public status: BeamStatus = BeamStatus.Closed;
+  /** The status of last frame */
   private _lastStatus: BeamStatus | undefined;
 
-  public readonly position: Cesium.PositionProperty | undefined = undefined;
+  /** The sampled position of this beam. */
+  public readonly position: Cesium.PositionProperty | undefined;
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
 
-  constructor(satellite: Satellite, index: int, parent: Cesium.Entity, ctrl: SimulatorControl) {
+  constructor(satellite: Satellite, index: int, ctrl: SimulatorControl) {
     super(ctrl);
     this.satellite = satellite;
     this.index = index;
-    this.position = this.initSatellitePosition(parent, El[index], Az[index]);
+    this.position = this.initSatellitePosition();
     this.primitive = this.createPrimitive();
     this.cover = Array(this.sim.users.length).fill(false);
   }
 
+  /**
+   * Create the primitive of this beam.
+   * @returns The primitive.
+   */
   private createPrimitive(): Cesium.Primitive {
     return new Cesium.Primitive({
       geometryInstances: this.ctrl.factory.beamInstances[this.index],
@@ -49,12 +54,11 @@ export class Beam extends Simulatable {
     });
   }
 
-  //星下点坐标
-  private initSatellitePosition(
-    parent: Cesium.Entity,
-    El: number,
-    Az: number
-  ): Cesium.SampledPositionProperty {
+  /**
+   * Initialize the sampled position of this beam.
+   * @returns
+   */
+  private initSatellitePosition(): Cesium.SampledPositionProperty {
     const positionBeam = new Cesium.SampledPositionProperty();
     //let m = new Cesium.Matrix4();
     //Cesium.Matrix4.setTranslation(Cesium.Matrix4.IDENTITY, new Cesium.Cartesian3(1, 1, 1), m)//构造平移矩阵
@@ -65,16 +69,16 @@ export class Beam extends Simulatable {
         new Cesium.JulianDate()
       );
 
-      const position = parent.position?.getValue(time);
+      const position = this.satellite.position.getValue(time);
       if (!position) continue;
 
       const cartographic = this.ctrl.ellipsoid.cartesianToCartographic(position);
       const lat = Cesium.Math.toDegrees(cartographic.latitude),
         lng = Cesium.Math.toDegrees(cartographic.longitude),
         hei = cartographic.height;
-      const heading = Az;
+      const heading = Az[this.index];
       const pitch = 0;
-      const roll = El;
+      const roll = El[this.index];
       const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
 
       const R = (hei / 2) * Math.tan(roll);
@@ -108,24 +112,34 @@ export class Beam extends Simulatable {
     }
   }
 
+  /**
+   * Get whether this beam is near the user.
+   * @param user A user.
+   * @returns Whether this beam is near the user.
+   */
   private nearUser(user: User): boolean {
     const positionS = this.satellite.currentPositionCarto;
     const positionU = user.currentPositionCarto;
-    return Math.abs(longitudeDifference(positionS, positionU)) <= 40;
+    return lngDiff(positionS.longitude, positionU.longitude) <= BW;
   }
 
   //波束用户夹角及覆盖情况
-  private getValue(user: User) {
+  /**
+   * Get the angle between a user and whether covers the user.
+   * @param user A user.
+   * @returns `angleBU` and `isCovered`.
+   */
+  public getValue(user: User) {
     const positionS = this.satellite.currentPosition;
     const positionU = user.currentPosition;
     const positionB = this.currentPosition;
 
-    const vectorUS = difference(positionU, positionS); // 用户坐标和卫星之间的向量
-    const vectorBS = difference(positionB, positionS);
+    const vectorUS = cartDiff(positionU, positionS); // 用户坐标和卫星之间的向量
+    const vectorBS = cartDiff(positionB, positionS);
 
     const angleBU = Cesium.Cartesian3.angleBetween(vectorUS, vectorBS); // 波束和用户之间的夹角
     const isCovered =
-      Cesium.Cartesian3.distance(positionS, positionU) < 2400000 && angleBU < BW / 2;
+      Cesium.Cartesian3.distance(positionS, positionU) < CoverFar && angleBU < BW / 2;
 
     return {
       angle: angleBU,
@@ -133,13 +147,21 @@ export class Beam extends Simulatable {
     };
   }
 
+  /**
+   * Get whether this beam covers a user.
+   * @param userIndex The index of a user.
+   * @returns The bool value.
+   */
   public coversUser(userIndex: int): boolean {
     return this.status === BeamStatus.Open && this.cover[userIndex];
   }
 
-  public updateDisplay(covered: boolean): void {
-    this.primitive.show = covered;
-    if (covered) {
+  /**
+   * Update primitive status of current frame.
+   * @param needShow Whether the beam should show.
+   */
+  public updateDisplay(needShow: boolean): void {
+    if (needShow) {
       this.primitive.modelMatrix = groundMatrix(this.currentPositionCarto);
       if (this._lastStatus != this.status) {
         this.primitive.appearance = this.ctrl.factory.beamAppearances[this.status];

@@ -6,8 +6,11 @@ import { Simulator } from "./simulator";
 import { User } from "./user";
 
 export enum BeamDisplayLevel {
+  /** Display nothing. */
   None,
+  /** Only display those whose satellite cover any user. */
   Some,
+  /** Display all. */
   All,
 }
 
@@ -18,16 +21,21 @@ export class SimulatorControl {
   public readonly factory: DisplayFactory;
 
   private dataset: Dataset | undefined = undefined;
-  public dataSource: Cesium.DataSource | undefined = undefined;
-  public valid: boolean = false;
 
   private readonly billboards: Cesium.BillboardCollection;
   private readonly beamPrimitives: Cesium.PrimitiveCollection;
 
+  /** Whether the system is valid. */
+  public get valid(): boolean {
+    return this.dataset instanceof Dataset;
+  }
+
+  /** The scene of the viewer. */
   public get scene(): Cesium.Scene {
     return this.viewer.scene;
   }
 
+  /** The ellipsoid in the scene. */
   public get ellipsoid(): Cesium.Ellipsoid {
     return this.scene.globe.ellipsoid;
   }
@@ -43,17 +51,25 @@ export class SimulatorControl {
     this.sim = new Simulator();
   }
 
+  /**
+   * Load dataset for simulation.
+   * @param dataset
+   */
   public async load(dataset: Dataset): Promise<void> {
     if (this.valid) this.clear();
     this.dataset = dataset;
     await this.loadCZML(dataset.czml);
-    this.addUsers();
-    this.valid = true;
+    this.initUsers();
   }
 
+  /**
+   * Load czml in the dataset.
+   * @param czml
+   */
   private async loadCZML(czml: any): Promise<void> {
     const dataSource = await this.viewer.dataSources.add(Cesium.CzmlDataSource.load(czml));
     for (const entity of dataSource.entities.values) {
+      entity.name = "satellite";
       const satellite = new Satellite(entity, this);
       this.sim.satellites.push(satellite);
       this.beamPrimitives.add(satellite.rangePrimitive);
@@ -61,7 +77,10 @@ export class SimulatorControl {
     }
   }
 
-  public addUsers(): void {
+  /**
+   * Initialize users.
+   */
+  public initUsers(): void {
     for (const userPos of this.dataset!.users) {
       this.billboards.add({
         image: this.config.terminalImageUrl,
@@ -72,26 +91,33 @@ export class SimulatorControl {
     }
   }
 
-  //显示波束
+  /**
+   * Show beams of all the satellites.
+   * @param level The level of beam display.
+   */
   public showBeams(level: BeamDisplayLevel): void {
     this.beamPrimitives.show = true;
     this.sim.satellites.forEach(s => s.showBeams(level));
   }
 
+  /**
+   * Hide all the beams.
+   */
   public hideBeams(): void {
     this.beamPrimitives.show = false;
     this.sim.satellites.forEach(s => s.hideBeams());
   }
 
+  /**
+   * Clear all entities, primitives, etc, in the scene.
+   */
   public clear(): void {
     this.sim.clear();
     this.viewer.entities.removeAll();
     this.billboards.removeAll();
     this.beamPrimitives.removeAll();
     this.viewer.dataSources.removeAll(true);
-    this.dataSource = undefined;
     this.dataset = undefined;
-    this.valid = false;
   }
 
   //显示卫星状态矩阵
@@ -107,6 +133,10 @@ export class SimulatorControl {
     return content;
   } */
 
+  /**
+   * Get the current simulation information.
+   * @returns
+   */
   public getCurrentInfo() {
     const openNum = this.sim.beams.filter(b => b.status == BeamStatus.Open).size();
     const coveredNum = this.sim.coveredUsers().size();
