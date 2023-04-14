@@ -16,7 +16,7 @@ export const El = [
 export const Az = [
   120, 100.89, 139.11, -180, 96.59, 120, 143.41, 166.1, -42.62, 80, 15.94, -15.94, -80, -90, -90,
   -90,
-].map(toRadians);
+].map(x => toRadians(x) + 0.0876);
 
 for (let j = 16; j < BeamsPerSatellite; j++) {
   El[j] = El[j - 16];
