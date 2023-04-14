@@ -68,7 +68,7 @@ const onViewerReady = ({ Cesium, viewer }: VcReadyObject) => {
     }
   }
   // viewer.scene.requestRenderMode = true;
-  viewer.scene.debugShowFramesPerSecond = true;
+  viewer.scene.debugShowFramesPerSecond = false;
   viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.postUpdate.addEventListener(icrf);
 };

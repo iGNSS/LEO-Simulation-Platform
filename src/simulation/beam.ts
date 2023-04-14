@@ -1,5 +1,5 @@
 import { SimulatorControl } from "@/controllers/simulator-control";
-import { cartDiff, groundMatrix, lngDiff, positionUnderSatellite } from "@/utils/cesium-math";
+import { cartDiff, groundMatrix, isNear, positionUnderSatellite } from "@/utils/cesium-math";
 import { Az, BW, CoverFar, El } from "./beam-constants";
 import { Satellite } from "./satellite";
 import { Simulatable } from "./simulatable";
@@ -98,7 +98,7 @@ export class Beam extends Simulatable {
   private nearUser(user: User): boolean {
     const positionS = this.satellite.currentPositionCarto;
     const positionU = user.currentPositionCarto;
-    return lngDiff(positionS.longitude, positionU.longitude) <= BW;
+    return isNear(positionS, positionU, BW);
   }
 
   //波束用户夹角及覆盖情况

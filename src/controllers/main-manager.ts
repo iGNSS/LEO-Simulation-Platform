@@ -80,9 +80,10 @@ export class MainManager {
 
   public toggleHeatmap(val: boolean): void {
     if (val) {
-      const ss = this.grid.positions.map(p => this.ctrl.sim.getSignalStrength(p));
+      const ss = this.grid.positions.map(p => this.ctrl.sim.getSignalStrength(p));  
       this.grid.updateData(ss);
-      this.heatmap.setData(0, 1, this.grid.heatmapData);
+      console.log(ss);
+      this.heatmap.setData(0, Math.max.apply(null, ss), this.grid.heatmapData);
     }
     this.clock.shouldAnimate = !val;
     this.heatmap.props.show = val;

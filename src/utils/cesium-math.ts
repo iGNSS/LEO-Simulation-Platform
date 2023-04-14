@@ -1,6 +1,6 @@
 import { R_e } from "@/simulation/constants";
 
-const { sin, cos, asin, tan } = Math;
+const { abs, sin, cos, asin, tan } = Math;
 
 export const toRadians = (x: number) => (x * Math.PI) / 180;
 
@@ -9,18 +9,35 @@ export function cartDiff(left: Cesium.Cartesian3, right: Cesium.Cartesian3): Ces
 }
 
 /**
- * TODO!
  * Calculate the absolute longitude differences of two longitudes in radians.
  * @param left
  * @param right
  * @returns
  */
 export function lngDiff(left: number, right: number): number {
-  return Math.min(left - right);
+  const result = abs(left - right);
+  return result < Math.PI ? result : Math.PI * 2 - result;
 }
 
-export function cartoLngDiffDeg(left: Cesium.Cartographic, right: Cesium.Cartographic): number {
-  return Cesium.Math.toDegrees(left.longitude) - Cesium.Math.toDegrees(right.longitude);
+/**
+ * Calculate the absolute longitude differences of two latitudes in radians.
+ * @param left
+ * @param right
+ * @returns
+ */
+export function latDiff(left: number, right: number): number {
+  const result = abs(left - right);
+  return result;
+}
+
+export function isNear(
+  left: Cesium.Cartographic,
+  right: Cesium.Cartographic,
+  rad: number
+): boolean {
+  return (
+    lngDiff(left.longitude, right.longitude) < rad && latDiff(left.latitude, right.latitude) < rad
+  );
 }
 
 export function deg2Coord(radians: number): number {

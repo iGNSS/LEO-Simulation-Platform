@@ -3,44 +3,26 @@ home: true
 heroImage: /xx.png
 actionText: 快速上手 →
 actionLink: /guide/
-tagline: 欢迎来到我们的低轨卫星仿真平台！我们的平台提供基于 Web 的低轨卫星仿真环境，以帮助用户更好地理解和设计低轨卫星系统。
+tagline: 欢迎来到我们的平台主页！我们的平台提供基于 Web 的低轨卫星仿真环境，以帮助用户更好地设计低轨卫星系统。
 actions:
   - text: 进入星座仿真
     link: https://seusatellite.com.cn/
     type: secondary #按钮的 type
+  - text: 进入星座仿真
+    link: https://seusatellite.com.cn/
+    type: secondary #按钮的 type
 features:
-- title: 简洁至上
-  details: 以 Markdown 为中心的项目结构，以最少的配置帮助你专注于写作。
-- title: Vue 驱动
-  details: 享受 Vue + webpack 的开发体验，在 Markdown 中使用 Vue 组件，同时可以使用 Vue 来开发自定义主题。
-- title: 高性能
-  details: VuePress 为每个页面预渲染生成静态的 HTML，同时在页面被加载的时候，将作为 SPA 运行。
-footer: MIT Licensed | Copyright © 2018-present xxxxxx
+- title: 所见即所得
+  details: 实现卫星轨道和卫星波束的可视化仿真，更加直观显示卫星、波束、用户位置，动态显示波束开启个数、用户覆盖个数等信息，更好帮助用户进行星座仿真
+- title: 多种输入格式
+  details: 支持TLE、CZML等多种卫星轨道数据输入，用户可以自定义波束信息、用户位置等数据，满足用户的各种需求和使用场景
+- title: 多种仿真需求
+  details: 可通过页面上的控件控制仿真时间流向、时间倍率、视角位置、视角高度、波束显示模式等信息，可通过时间轴抓取任意时间的星座场景
+footer: SEU Licensed | Copyright © 2023
 ---
-
-## 关于我们
-
-我们是一家致力于推进卫星技术发展的公司，我们的目标是让卫星技术更加易于理解和应用。我们的团队由卫星系统工程师、软件开发人员和数据科学家组成，为用户提供高质量的仿真环境和数据分析工具。
-
-## 产品特点
-
-- 基于 Web 的仿真环境，方便易用；
-- 支持多种卫星轨道类型和传感器模型；
-- 提供实时可视化和数据分析工具；
-- 可以定制和保存仿真配置。
-
-## 使用说明
-
-1. 登录或注册账户；
-2. 创建新的仿真场景并配置参数；
-3. 运行仿真并查看结果；
-4. 使用数据分析工具对仿真结果进行分析；
-5. 导出数据或保存仿真场景配置。
 
 ## 联系我们
 
-如果您对我们的产品有任何疑问或建议，请随时与我们联系。您可以发送电子邮件至 contact@low-earth-orbit-sim.com 或通过我们的网站上的联系表单与我们联系。
+如果您对我们的产品有任何疑问或建议，请随时与我们联系。您可以发送电子邮件至 panyh@seu.edu.cn 或移步我们的[GitHub仓库](https://github.com/Devour233/LEO-Simulation-Platform)我们联系。
 
 谢谢您的访问，我们期待着与您合作！
-
-<iframe id="iframe" height=500 width=100% frameborder=0 allowfullscreen="true" src="https://seusatellite.com.cn/" />

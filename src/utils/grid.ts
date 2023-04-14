@@ -34,7 +34,7 @@ export class Grid {
    */
   public updateData(ss: number[]) {
     for (let i = 0; i < ss.length; i++) {
-      this.heatmapData[i].value = ss[i];
+      this.heatmapData[i].value = ss[i] == 0 ? 0.01: ss[i];
     }
   }
 }

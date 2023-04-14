@@ -50,7 +50,7 @@
             <span>轨道数</span><span>{{ curInfo.laneNum }}</span>
           </div>
           <div>
-            <span>轨道卫星数</span><span>{{ curInfo.satelliteNum }}</span>
+            <span>卫星数</span><span>{{ curInfo.satelliteNum }}</span>
           </div>
           <div>
             <span>开启波束数</span><span>{{ curInfo.openNum }}</span>
@@ -242,6 +242,9 @@ const loadAndRun = async (czmlStr: string) => {
     $q.notify({ type: "info", message: "加载新数据集" });
   }
   await mngr.loadAndRun(czmlStr);
+  viewer.camera.setView({
+    destination : Cesium.Cartesian3.fromDegrees(-80,35,10000000)
+  });
   $q.notify({ type: "info", message: "加载完成！" });
 };
 
@@ -262,6 +265,7 @@ const onToggleHeatmap = (val: boolean) => {
 
 const onFileUpload = async (file: File | null) => {
   if (!file) return;
+  $q.notify({ type: "info", message: "Wait a minute..." });
   await loadAndRun(await file.text());
 };
 </script>
@@ -291,6 +295,7 @@ const onFileUpload = async (file: File | null) => {
   }
 
   .bottom-right {
+    display: none;
     position: absolute;
     right: 0;
     bottom: 0;
