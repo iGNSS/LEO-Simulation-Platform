@@ -42,15 +42,16 @@ export class Satellite extends Simulatable {
   private createBeams(): Beam[] {
     const beams = [];
     for (let j = 0; j < BeamsPerSatellite; j++) {
-      beams.push(new Beam(this, j, this.ctrl));
-      this.beamPrimitives.add(beams.at(-1)?.primitive);
+      const beam = new Beam(this, j, this.ctrl)
+      beams.push(beam);
+      this.beamPrimitives.add(beam.primitive);
     }
     return beams;
   }
 
   public update(time: Cesium.JulianDate): void {
-    this.currentPosition = this.position.getValue(time)!;
-    this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
+    this.position.getValue(time, this.currentPosition);
+    Cesium.Cartographic.fromCartesian(this.currentPosition, undefined, this.currentPositionCarto);
     this.beams.forEach(b => b.update(time));
   }
 

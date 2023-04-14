@@ -6,6 +6,8 @@ export default defineUserConfig({
   description: "基于Web的低轨卫星仿真环境",
   head: [["link", { rel: "icon", href: "/icon.png" }]],
   theme: defaultTheme({
+    contributors: false,
+    lastUpdated: false,
     // 默认主题配置
     navbar: [
       {
@@ -14,11 +16,18 @@ export default defineUserConfig({
       },
       {
         text: "帮助",
-        link: "guide/getting-started",
+        link: "/guide",
       },
       {
-        text: "视频资源",
-        link: "/contributing",
+        text: "开始仿真",
+        link: "/simulation",
+      },
+    ],
+    sidebar: [
+      {
+        text: "帮助",
+        link: "/guide",
+        children: ["/guide/configuration", "/guide/getting-started"],
       },
     ],
   }),

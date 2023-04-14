@@ -1,20 +1,27 @@
+@import "embed-simulation.scss";
+
 :root {
+  --c-text-strong: var(--c-text);
+}
+
+:root.dark {
   // brand colors
   --c-brand: #24c0d8;
   --c-brand-light: #25cfed;
 
   // background colors
-  --c-bg: #4D6083;
-  --c-bg-light: #f3f4f5;
-  --c-bg-lighter: #eeeeee;
-  --c-bg-dark: #ebebec;
-  --c-bg-darker: #e6e6e6;
+  --c-bg: #4d6083;
+  --c-bg-light: #596d91;
+  --c-bg-lighter: #c6d2ea;
+  --c-bg-dark: #3e5276;
+  --c-bg-darker: #2d4064;
   --c-bg-navbar: #466aac;
   --c-bg-sidebar: #436199;
-  --c-bg-arrow: #cccccc;
+  --c-bg-arrow: #333333;
 
   // text colors
-  --c-text: #E3E5EB;
+  --c-text: #e3e5eb;
+  --c-text-strong: #aae5f7;
   --c-text-accent: var(--c-brand);
   --c-text-light: #95beea;
   --c-text-lighter: #c0dbf6;
@@ -22,11 +29,11 @@
   --c-text-quote: #cbc9c9;
 
   // border colors
-  --c-border: #3c5986;
-  --c-border-dark: #31577c;
+  --c-border: #3b557d;
+  --c-border-dark: #7299bf;
 
   // custom container colors
-  --c-tip: #42b983;
+  /*   --c-tip: #42b983;
   --c-tip-bg: var(--c-bg-light);
   --c-tip-title: var(--c-text);
   --c-tip-text: var(--c-text);
@@ -53,38 +60,38 @@
   --c-danger-text-accent: #bd1a1a;
   --c-danger-text-light: #b5474d;
   --c-danger-text-quote: #c15b5b;
-  --c-details-bg: #eeeeee;
+  --c-details-bg: #eeeeee; */
 
   // badge component colors
-  --c-badge-tip: var(--c-tip);
+  /*   --c-badge-tip: var(--c-tip);
   --c-badge-warning: #ecc808;
   --c-badge-warning-text: var(--c-bg);
   --c-badge-danger: #dc2626;
-  --c-badge-danger-text: var(--c-bg);
+  --c-badge-danger-text: var(--c-bg); */
 
   // transition vars
-  --t-color: 0.3s ease;
-  --t-transform: 0.3s ease;
+  /* --t-color: 0.3s ease;
+  --t-transform: 0.3s ease;*/
 
   // code blocks vars
-  --code-bg-color: #282c34;
+  /* --code-bg-color: #282c34;
   --code-hl-bg-color: rgba(0, 0, 0, 0.66);
   --code-ln-color: #9e9e9e;
-  --code-ln-wrapper-width: 3.5rem;
+  --code-ln-wrapper-width: 3.5rem; */
 
   // font vars
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+  /* --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-family-code: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  --font-family-code: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; */
 
   // layout vars
-  --navbar-height: 3.6rem;
+  /* --navbar-height: 3.6rem;
   --navbar-padding-v: 0.7rem;
   --navbar-padding-h: 1.5rem;
   --sidebar-width: 20rem;
   --sidebar-width-mobile: calc(var(--sidebar-width) * 0.82);
   --content-width: 740px;
-  --homepage-width: 960px;
+  --homepage-width: 960px; */
 }
 
 // plugin-back-to-top
@@ -94,7 +101,7 @@
 }
 
 // plugin-docsearch
-.DocSearch {
+/* .DocSearch {
   --docsearch-primary-color: var(--c-brand);
   --docsearch-text-color: var(--c-text);
   --docsearch-highlight-color: var(--c-brand);
@@ -109,7 +116,7 @@
   --docsearch-hit-background: var(--c-bg);
   --docsearch-hit-shadow: 0 1px 3px 0 var(--c-border-dark);
   --docsearch-footer-background: var(--c-bg);
-}
+} */
 
 // plugin-external-link-icon
 .external-link-icon {
@@ -146,4 +153,13 @@
 
   --search-item-text-color: var(--c-text-lighter);
   --search-item-focus-bg-color: var(--c-bg-light);
+}
+
+strong {
+  color: var(--c-text-strong);
+}
+
+.home .hero .description {
+  white-space: pre;
+  font-size: 1.4rem;
 }

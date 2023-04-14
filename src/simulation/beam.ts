@@ -1,7 +1,6 @@
 import { SimulatorControl } from "@/controllers/simulator-control";
-import { cartDiff, groundMatrix, lngDiff, latDiff } from "@/utils/cesium-math";
+import { cartDiff, groundMatrix, isNear, positionUnderSatellite } from "@/utils/cesium-math";
 import { Az, BW, CoverFar, El } from "./beam-constants";
-import { R_e } from "./constants";
 import { Satellite } from "./satellite";
 import { Simulatable } from "./simulatable";
 import { User } from "./user";
@@ -30,7 +29,7 @@ export class Beam extends Simulatable {
   private _lastStatus: BeamStatus | undefined;
 
   /** The sampled position of this beam. */
-  public readonly position: Cesium.PositionProperty | undefined;
+  public readonly position: Cesium.PositionProperty;
   public currentPosition: Cesium.Cartesian3 = new Cesium.Cartesian3();
   public currentPositionCarto: Cesium.Cartographic = new Cesium.Cartographic();
 
@@ -59,9 +58,8 @@ export class Beam extends Simulatable {
    * @returns
    */
   private initSatellitePosition(): Cesium.SampledPositionProperty {
-    const positionBeam = new Cesium.SampledPositionProperty();
-    //let m = new Cesium.Matrix4();
-    //Cesium.Matrix4.setTranslation(Cesium.Matrix4.IDENTITY, new Cesium.Cartesian3(1, 1, 1), m)//构造平移矩阵
+    const positionB = new Cesium.SampledPositionProperty();
+
     for (let i = 0; i < Beam.pointNum; i++) {
       const time = Cesium.JulianDate.addSeconds(
         this.ctrl.viewer.clock.startTime,
@@ -69,43 +67,23 @@ export class Beam extends Simulatable {
         new Cesium.JulianDate()
       );
 
-      const position = this.satellite.position.getValue(time);
-      if (!position) continue;
+      const positionS = this.satellite.position.getValue(time);
+      if (!positionS) continue;
 
-      const cartographic = this.ctrl.ellipsoid.cartesianToCartographic(position);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude),
-        lng = Cesium.Math.toDegrees(cartographic.longitude),
-        hei = cartographic.height;
-      const heading = Az[this.index];
-      const pitch = 0;
-      const roll = El[this.index];
-      const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
-
-      const R = (hei / 2) * Math.tan(roll);
-      const L = R_e * 2 * Math.asin(R / (2 * R_e));
-      const c = L / R_e;
-      const a = Math.acos(
-        Math.sin(cartographic.latitude) * Math.cos(c) +
-          Math.cos(cartographic.latitude) * Math.sin(c) * Math.cos(heading + 0.0876)
-      );
-      const C = Math.asin((Math.sin(c) * Math.sin(heading + 0.0876)) / Math.sin(a));
-      const newPosition_PB = Cesium.Cartesian3.fromRadians(
-        cartographic.longitude + C,
-        Math.PI / 2 - a,
-        0
-      );
-      positionBeam.addSample(time, newPosition_PB);
+      const carto = this.ctrl.ellipsoid.cartesianToCartographic(positionS);
+      positionB.addSample(time, positionUnderSatellite(carto, Az[this.index], El[this.index]));
     }
-    positionBeam.setInterpolationOptions({
+    positionB.setInterpolationOptions({
       interpolationDegree: 5,
       interpolationAlgorithm: Cesium.LagrangePolynomialApproximation,
     }); //设定位置的插值算法
-    return positionBeam;
+    return positionB;
   }
 
   public update(time: Cesium.JulianDate) {
-    this.currentPosition = this.position!.getValue(time)!;
-    this.currentPositionCarto = Cesium.Cartographic.fromCartesian(this.currentPosition);
+    this.position.getValue(time, this.currentPosition);
+    Cesium.Cartographic.fromCartesian(this.currentPosition, undefined, this.currentPositionCarto);
+
     for (let k = 0; k < this.sim.users.length; k++) {
       const user = this.sim.users[k];
       this.cover[k] = this.nearUser(user) && this.getValue(user).isCovered;
@@ -120,9 +98,9 @@ export class Beam extends Simulatable {
   private nearUser(user: User): boolean {
     const positionS = this.satellite.currentPositionCarto;
     const positionU = user.currentPositionCarto;
-    return (lngDiff(positionS.longitude, positionU.longitude) <= BW) && (latDiff(positionS.latitude, positionU.latitude) <= BW);
+    return isNear(positionS, positionU, BW);
   }
-  
+
   //波束用户夹角及覆盖情况
   /**
    * Get the angle between a user and whether covers the user.
@@ -162,7 +140,7 @@ export class Beam extends Simulatable {
    */
   public updateDisplay(needShow: boolean): void {
     if (needShow) {
-      this.primitive.modelMatrix = groundMatrix(this.currentPositionCarto);
+      groundMatrix(this.currentPositionCarto, this.primitive.modelMatrix);
       if (this._lastStatus != this.status) {
         this.primitive.appearance = this.ctrl.factory.beamAppearances[this.status];
       }
