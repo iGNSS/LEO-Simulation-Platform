@@ -8,9 +8,6 @@ actions:
   - text: 进入星座仿真
     link: https://seusatellite.com.cn/
     type: secondary #按钮的 type
-  - text: 进入星座仿真
-    link: https://seusatellite.com.cn/
-    type: secondary #按钮的 type
 features:
 - title: 所见即所得
   details: 实现卫星轨道和卫星波束的可视化仿真，更加直观显示卫星、波束、用户位置，动态显示波束开启个数、用户覆盖个数等信息，更好帮助用户进行星座仿真
@@ -23,6 +20,4 @@ footer: SEU Licensed | Copyright © 2023
 
 ## 联系我们
 
-如果您对我们的产品有任何疑问或建议，请随时与我们联系。您可以发送电子邮件至 panyh@seu.edu.cn 或移步我们的[GitHub仓库](https://github.com/Devour233/LEO-Simulation-Platform)我们联系。
-
-谢谢您的访问，我们期待着与您合作！
+如果您对我们的产品有任何疑问或建议，请随时与我们联系。您可以发送电子邮件至 panyh@seu.edu.cn 或移步我们的[GitHub仓库](https://github.com/Devour233/LEO-Simulation-Platform)我们联系。谢谢您的访问，我们期待着与您合作！

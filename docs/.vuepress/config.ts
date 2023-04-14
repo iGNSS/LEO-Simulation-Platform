@@ -17,7 +17,7 @@ export default defineUserConfig({
         link: "guide/getting-started",
       },
       {
-        text: "开始仿真",
+        text: "视频资源",
         link: "/contributing",
       },
     ],
