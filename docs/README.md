@@ -3,7 +3,10 @@ home: true
 heroImage: /xx.png
 actionText: 快速上手 →
 actionLink: /guide/
-tagline: 欢迎来到我们的平台主页！我们的平台提供基于 Web 的低轨卫星仿真环境，以帮助用户更好地设计低轨卫星系统。
+tagline: |
+  欢迎来到我们的平台主页！
+  我们的平台提供基于 Web 的低轨卫星仿真环境，
+  以帮助用户更好地设计低轨卫星系统。
 actions:
   - text: 进入星座仿真
     link: https://seusatellite.com.cn/sat.html
