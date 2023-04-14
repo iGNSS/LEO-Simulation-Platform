@@ -1,13 +1,10 @@
 ---
-title: github 的 pull request 操作
-date: 2020-08-22
-categories:
- - git
-tags:
- - git
-sidebar: 'auto'
+title: 帮助
 ---
 
-# Hello VuePress
-
-啊啊啊啊
+<!-- 相对路径 -->
+[首页](/README.md)  
+[配置参考](configuration.md)  
+[使用说明](instructions.md)  
+<!-- URL -->
+[GitHub](https://github.com/Devour233/LEO-Simulation-Platform)
